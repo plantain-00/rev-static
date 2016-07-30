@@ -1,0 +1,37 @@
+{
+  "name": "rev-static",
+  "version": "1.0.0",
+  "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
+  "main": "dist/index.js",
+  "scripts": {
+    "init": "npm i -g typescript@beta tslint",
+    "tslint": "tslint src/index.ts",
+    "test": "./bin/rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plantain-00/rev-static.git"
+  },
+  "keywords": [
+    "rev"
+  ],
+  "author": "york yao",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/plantain-00/rev-static/issues"
+  },
+  "homepage": "https://github.com/plantain-00/rev-static#readme",
+  "devDependencies": {
+    "@types/camelcase": "0.0.29",
+    "@types/ejs": "^2.3.29",
+    "@types/minimist": "^1.1.28",
+    "@types/node": "^4.0.30",
+    "typescript": "^2.0.0"
+  },
+  "dependencies": {
+    "camelcase": "^3.0.0",
+    "ejs": "^2.5.1",
+    "minimist": "^1.2.0"
+  },
+  "types": "./dist/index.d.ts"
+}

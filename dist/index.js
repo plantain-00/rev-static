@@ -1,0 +1,126 @@
+"use strict";
+var ejs = require("ejs");
+var fs = require("fs");
+var crypto = require("crypto");
+var minimist = require("minimist");
+var camelcase = require("camelcase");
+var path = require("path");
+function md5(str) {
+    return crypto.createHash("md5").update(str).digest("hex");
+}
+function showHelpInformation() {
+    console.log("Syntax:          rev-static [options] [file ...]");
+    console.log("Examples:");
+    console.log("  %> rev-static foo.js bar.ejs.html -o bar.html");
+    console.log("  %> rev-static foo.js bar.css baz.ejs.html -o baz.html");
+    console.log("  %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html");
+    console.log("Options:");
+    console.log("  -o, --out      output html files, seperated by ',' if there are more than 1 file.");
+    console.log("  -h, --help     print this message.");
+    console.log("  -j, --json     show the variables as json format, or output as json file.");
+    console.log("");
+    process.exit();
+}
+/**
+ * calculate and return md5 version of all input files
+ * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
+ * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
+ */
+function revisionCssJs(inputFiles) {
+    var variables = {};
+    for (var _i = 0, inputFiles_1 = inputFiles; _i < inputFiles_1.length; _i++) {
+        var file = inputFiles_1[_i];
+        var variableName = camelcase(path.normalize(file).replace(/\\|\//g, "-"));
+        var version = md5(fs.readFileSync(file).toString());
+        var extensionName = path.extname(file);
+        var newPath = path.resolve(path.dirname(file), path.basename(file, extensionName) + "-" + version + extensionName);
+        fs.createReadStream(file).pipe(fs.createWriteStream(newPath));
+        variables[variableName] = version;
+    }
+    return variables;
+}
+exports.revisionCssJs = revisionCssJs;
+/**
+ * generate html files just as the `outputFiles` shows
+ * the `inputFiles` should be `ejs` templates, the variables will be `versions` from `revisionCssJs` function
+ * the `inputFiles` and `outputFiles` should be one-to-one map, eg, input `["foo.ejs.html", "bar.ejs.html"]` and output `["foo.html", "bar.html"]`
+ */
+function revisionHtml(inputFiles, outputFiles, versions) {
+    if (outputFiles.length !== inputFiles.length) {
+        console.log("Error: input " + inputFiles.length + " html files, but output " + outputFiles.length + " html files.");
+        showHelpInformation();
+    }
+    var _loop_1 = function(i) {
+        ejs.renderFile(inputFiles[i], versions, {}, function (renderError, file) {
+            if (renderError) {
+                console.log(renderError);
+            }
+            else {
+                fs.writeFile(outputFiles[i], file, function (writeError) {
+                    if (writeError) {
+                        console.log(writeError);
+                    }
+                    else {
+                        console.log("Success: to \"" + outputFiles[i] + "\" from \"" + inputFiles[i] + "\".");
+                    }
+                });
+            }
+        });
+    };
+    for (var i = 0; i < inputFiles.length; i++) {
+        _loop_1(i);
+    }
+}
+exports.revisionHtml = revisionHtml;
+function executeCommandLine() {
+    var argv = minimist(process.argv.slice(2));
+    var showHelp = argv["h"] || argv["help"];
+    if (showHelp) {
+        showHelpInformation();
+    }
+    var inputFiles = argv["_"];
+    if (!inputFiles || inputFiles.length === 0) {
+        console.log("Error: no input files.");
+        showHelpInformation();
+    }
+    var htmlInputFiles = [];
+    var jsCssInputFiles = [];
+    for (var _i = 0, inputFiles_2 = inputFiles; _i < inputFiles_2.length; _i++) {
+        var file = inputFiles_2[_i];
+        if (!fs.existsSync(file)) {
+            console.log("Error: file: \"" + file + "\" not exists.");
+            showHelpInformation();
+        }
+        var extensionName = path.extname(file);
+        if (extensionName.toLowerCase() === ".html") {
+            htmlInputFiles.push(file);
+        }
+        else {
+            jsCssInputFiles.push(file);
+        }
+    }
+    var versions = revisionCssJs(jsCssInputFiles);
+    var json = argv["j"] || argv["json"];
+    if (json === true) {
+        console.log("Versions: \n" + JSON.stringify(versions, null, "  "));
+    }
+    else if (typeof json === "string") {
+        fs.writeFile(json, JSON.stringify(versions, null, "  "), function (error) {
+            if (error) {
+                console.log(error);
+            }
+            else {
+                console.log("Success: to \"" + json + "\".");
+            }
+        });
+    }
+    var outFilesString = argv["o"] || argv["out"];
+    if (typeof outFilesString !== "string") {
+        console.log("Error: invalid parameter: \"-o\".");
+        showHelpInformation();
+    }
+    var htmlOutputFiles = outFilesString.split(",");
+    revisionHtml(htmlInputFiles, htmlOutputFiles, versions);
+}
+exports.executeCommandLine = executeCommandLine;
+//# sourceMappingURL=index.js.map
