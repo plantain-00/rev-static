@@ -6,7 +6,8 @@
   "scripts": {
     "init": "npm i -g typescript@beta tslint",
     "tslint": "tslint src/index.ts",
-    "test": "./bin/rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html"
+    "demo-test": "./bin/rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html",
+    "commonjs-test": "node tests/commonjs.js"
   },
   "repository": {
     "type": "git",

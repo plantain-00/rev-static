@@ -1,8 +1,30 @@
+[![Dependency Status](https://david-dm.org/plantain-00/rev-static.svg)](https://david-dm.org/plantain-00/rev-static)
+[![devDependency Status](https://david-dm.org/plantain-00/rev-static/dev-status.svg)](https://david-dm.org/plantain-00/rev-static#info=devDependencies)
+[![Build Status](https://travis-ci.org/plantain-00/rev-static.svg?branch=master)](https://travis-ci.org/plantain-00/rev-static)
+
 ## usage from cli
 
 + `npm i rev-static -g`
 + `rev-static foo.js bar.ejs.html -o bar.html`
-+ show demo: `rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html`
+
+## cli demo
+
+`rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html`
+
+## cli help
+
+```text
+Syntax:          rev-static [options] [file ...]
+Examples:
+  %> rev-static foo.js bar.ejs.html -o bar.html
+  %> rev-static foo.js bar.css baz.ejs.html -o baz.html
+  %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html
+  %> rev-static foo.js bar.css -j version.json
+Options:
+  -o, --out      output html files, seperated by ',' if there are more than 1 file.
+  -h, --help     print this message.
+  -j, --json     show the variables as json format, or output as json file.
+```
 
 ## usage from nodejs
 
