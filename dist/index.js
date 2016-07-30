@@ -8,7 +8,7 @@ var path = require("path");
 function md5(str) {
     return crypto.createHash("md5").update(str).digest("hex");
 }
-function showHelpInformation() {
+function showHelpInformation(code) {
     console.log("Syntax:          rev-static [options] [file ...]");
     console.log("Examples:");
     console.log("  %> rev-static foo.js bar.ejs.html -o bar.html");
@@ -19,7 +19,7 @@ function showHelpInformation() {
     console.log("  -h, --help     print this message.");
     console.log("  -j, --json     show the variables as json format, or output as json file.");
     console.log("");
-    process.exit();
+    process.exit(code);
 }
 /**
  * calculate and return md5 version of all input files
@@ -48,7 +48,7 @@ exports.revisionCssJs = revisionCssJs;
 function revisionHtml(inputFiles, outputFiles, versions) {
     if (outputFiles.length !== inputFiles.length) {
         console.log("Error: input " + inputFiles.length + " html files, but output " + outputFiles.length + " html files.");
-        showHelpInformation();
+        showHelpInformation(1);
     }
     var _loop_1 = function(i) {
         ejs.renderFile(inputFiles[i], versions, {}, function (renderError, file) {
@@ -76,12 +76,12 @@ function executeCommandLine() {
     var argv = minimist(process.argv.slice(2));
     var showHelp = argv["h"] || argv["help"];
     if (showHelp) {
-        showHelpInformation();
+        showHelpInformation(0);
     }
     var inputFiles = argv["_"];
     if (!inputFiles || inputFiles.length === 0) {
         console.log("Error: no input files.");
-        showHelpInformation();
+        showHelpInformation(1);
     }
     var htmlInputFiles = [];
     var jsCssInputFiles = [];
@@ -89,7 +89,7 @@ function executeCommandLine() {
         var file = inputFiles_2[_i];
         if (!fs.existsSync(file)) {
             console.log("Error: file: \"" + file + "\" not exists.");
-            showHelpInformation();
+            showHelpInformation(1);
         }
         var extensionName = path.extname(file);
         if (extensionName.toLowerCase() === ".html") {
@@ -117,7 +117,7 @@ function executeCommandLine() {
     var outFilesString = argv["o"] || argv["out"];
     if (typeof outFilesString !== "string") {
         console.log("Error: invalid parameter: \"-o\".");
-        showHelpInformation();
+        showHelpInformation(1);
     }
     var htmlOutputFiles = outFilesString.split(",");
     revisionHtml(htmlInputFiles, htmlOutputFiles, versions);

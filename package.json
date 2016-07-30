@@ -1,6 +1,6 @@
 {
   "name": "rev-static",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
@@ -33,5 +33,8 @@
     "ejs": "^2.5.1",
     "minimist": "^1.2.0"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "rev-static": "./bin/rev-static"
+  }
 }
