@@ -1,6 +1,7 @@
 [![Dependency Status](https://david-dm.org/plantain-00/rev-static.svg)](https://david-dm.org/plantain-00/rev-static)
 [![devDependency Status](https://david-dm.org/plantain-00/rev-static/dev-status.svg)](https://david-dm.org/plantain-00/rev-static#info=devDependencies)
 [![Build Status](https://travis-ci.org/plantain-00/rev-static.svg?branch=master)](https://travis-ci.org/plantain-00/rev-static)
+[![npm version](https://badge.fury.io/js/rev-static.svg)](https://badge.fury.io/js/rev-static)
 
 ## usage from cli
 
