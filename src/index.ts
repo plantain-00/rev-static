@@ -49,7 +49,7 @@ export function revisionCssJs(inputFiles: string[], customNewFileName?: (filePat
         const extensionName = path.extname(filePath);
         const baseName = path.basename(filePath, extensionName);
         if (customNewFileName) {
-            newFileName = customNewFileName(filePath, fileString, md5String,baseName,extensionName);
+            newFileName = customNewFileName(filePath, fileString, md5String, baseName, extensionName);
         } else {
             newFileName = baseName + "-" + md5String + extensionName;
         }
