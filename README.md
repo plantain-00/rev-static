@@ -23,7 +23,8 @@ Examples:
 Options:
   -o, --out      output html files, seperated by ',' if there are more than 1 file.
   -h, --help     print this message.
-  -j, --json     show the variables as json format, or output as json file.
+  -j, --json     output the variables in a json file, can be used by back-end templates.
+  -v, --version  print the tool's version.
 ```
 
 ## usage from nodejs

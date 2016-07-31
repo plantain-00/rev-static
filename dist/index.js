@@ -5,10 +5,15 @@ var crypto = require("crypto");
 var minimist = require("minimist");
 var camelcase = require("camelcase");
 var path = require("path");
+var packageJson = require("../package.json");
 function md5(str) {
     return crypto.createHash("md5").update(str).digest("hex");
 }
+function showToolVersion() {
+    console.log("Version: " + packageJson.version);
+}
 function showHelpInformation(code) {
+    showToolVersion();
     console.log("Syntax:          rev-static [options] [file ...]");
     console.log("Examples:");
     console.log("  %> rev-static foo.js bar.ejs.html -o bar.html");
@@ -18,7 +23,8 @@ function showHelpInformation(code) {
     console.log("Options:");
     console.log("  -o, --out      output html files, seperated by ',' if there are more than 1 file.");
     console.log("  -h, --help     print this message.");
-    console.log("  -j, --json     show the variables as json format, or output as json file.");
+    console.log("  -j, --json     output the variables in a json file, can be used by back-end templates.");
+    console.log("  -v, --version  print the tool's version.");
     console.log("");
     process.exit(code);
 }
@@ -32,11 +38,11 @@ function revisionCssJs(inputFiles) {
     for (var _i = 0, inputFiles_1 = inputFiles; _i < inputFiles_1.length; _i++) {
         var file = inputFiles_1[_i];
         var variableName = camelcase(path.normalize(file).replace(/\\|\//g, "-"));
-        var version = md5(fs.readFileSync(file).toString());
+        var fileVersion = md5(fs.readFileSync(file).toString());
         var extensionName = path.extname(file);
-        var newPath = path.resolve(path.dirname(file), path.basename(file, extensionName) + "-" + version + extensionName);
+        var newPath = path.resolve(path.dirname(file), path.basename(file, extensionName) + "-" + fileVersion + extensionName);
         fs.createReadStream(file).pipe(fs.createWriteStream(newPath));
-        variables[variableName] = version;
+        variables[variableName] = fileVersion;
     }
     return variables;
 }
@@ -79,6 +85,11 @@ function executeCommandLine() {
     if (showHelp) {
         showHelpInformation(0);
     }
+    var showVersion = argv["v"] || argv["version"];
+    if (showVersion) {
+        showToolVersion();
+        process.exit(0);
+    }
     var inputFiles = argv["_"];
     if (!inputFiles || inputFiles.length === 0) {
         console.log("Error: no input files.");
@@ -93,7 +104,7 @@ function executeCommandLine() {
             showHelpInformation(1);
         }
         var extensionName = path.extname(file);
-        if (extensionName.toLowerCase() === ".html") {
+        if ([".html", ".htm", "ejs"].indexOf(extensionName.toLowerCase()) !== -1) {
             htmlInputFiles.push(file);
         }
         else {
@@ -101,9 +112,10 @@ function executeCommandLine() {
         }
     }
     var versions = revisionCssJs(jsCssInputFiles);
+    console.log("Versions: \n" + JSON.stringify(versions, null, "  "));
     var json = argv["j"] || argv["json"];
     if (json === true) {
-        console.log("Versions: \n" + JSON.stringify(versions, null, "  "));
+        console.log("Warn: expect path of json file.");
     }
     else if (typeof json === "string") {
         fs.writeFile(json, JSON.stringify(versions, null, "  "), function (error) {

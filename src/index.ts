@@ -4,12 +4,18 @@ import * as crypto from "crypto";
 import * as minimist from "minimist";
 import * as camelcase from "camelcase";
 import * as path from "path";
+const packageJson: { version: string } = require("../package.json");
 
 function md5(str: string): string {
     return crypto.createHash("md5").update(str).digest("hex");
 }
 
+function showToolVersion() {
+    console.log(`Version: ${packageJson.version}`);
+}
+
 function showHelpInformation(code: number) {
+    showToolVersion();
     console.log("Syntax:          rev-static [options] [file ...]");
     console.log("Examples:");
     console.log("  %> rev-static foo.js bar.ejs.html -o bar.html");
@@ -19,7 +25,8 @@ function showHelpInformation(code: number) {
     console.log("Options:");
     console.log("  -o, --out      output html files, seperated by ',' if there are more than 1 file.");
     console.log("  -h, --help     print this message.");
-    console.log("  -j, --json     show the variables as json format, or output as json file.");
+    console.log("  -j, --json     output the variables in a json file, can be used by back-end templates.");
+    console.log("  -v, --version  print the tool's version.");
     console.log("");
     process.exit(code);
 }
@@ -33,11 +40,11 @@ export function revisionCssJs(inputFiles: string[]) {
     const variables: { [name: string]: string } = {};
     for (const file of inputFiles) {
         const variableName = camelcase(path.normalize(file).replace(/\\|\//g, "-"));
-        const version = md5(fs.readFileSync(file).toString());
+        const fileVersion = md5(fs.readFileSync(file).toString());
         const extensionName = path.extname(file);
-        const newPath = path.resolve(path.dirname(file), path.basename(file, extensionName) + "-" + version + extensionName);
+        const newPath = path.resolve(path.dirname(file), path.basename(file, extensionName) + "-" + fileVersion + extensionName);
         fs.createReadStream(file).pipe(fs.createWriteStream(newPath));
-        variables[variableName] = version;
+        variables[variableName] = fileVersion;
     }
     return variables;
 }
@@ -75,6 +82,12 @@ export function executeCommandLine() {
     if (showHelp) {
         showHelpInformation(0);
     }
+
+    const showVersion = argv["v"] || argv["version"];
+    if (showVersion) {
+        showToolVersion();
+        process.exit(0);
+    }
     const inputFiles = argv["_"];
     if (!inputFiles || inputFiles.length === 0) {
         console.log("Error: no input files.");
@@ -88,16 +101,17 @@ export function executeCommandLine() {
             showHelpInformation(1);
         }
         const extensionName = path.extname(file);
-        if (extensionName.toLowerCase() === ".html") {
+        if ([".html", ".htm", "ejs"].indexOf(extensionName.toLowerCase()) !== -1) {
             htmlInputFiles.push(file);
         } else {
             jsCssInputFiles.push(file);
         }
     }
     const versions = revisionCssJs(jsCssInputFiles);
-    const json: boolean | string = argv["j"] || argv["json"];
+    console.log(`Versions: \n${JSON.stringify(versions, null, "  ")}`);
+    const json: string | boolean = argv["j"] || argv["json"];
     if (json === true) {
-        console.log(`Versions: \n${JSON.stringify(versions, null, "  ")}`);
+        console.log(`Warn: expect path of json file.`);
     } else if (typeof json === "string") {
         fs.writeFile(json, JSON.stringify(versions, null, "  "), error => {
             if (error) {
