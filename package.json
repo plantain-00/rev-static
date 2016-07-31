@@ -4,17 +4,18 @@
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
-    "init": "npm i -g typescript@beta tslint",
     "tslint": "tslint src/index.ts",
     "demo-test": "./bin/rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html",
-    "commonjs-test": "node tests/commonjs.js"
+    "commonjs-test": "node tests/commonjs.js",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/plantain-00/rev-static.git"
   },
   "keywords": [
-    "rev"
+    "rev",
+    "version"
   ],
   "author": "york yao",
   "license": "MIT",
@@ -29,6 +30,7 @@
     "@types/glob": "^5.0.29",
     "@types/minimist": "^1.1.28",
     "@types/node": "^4.0.30",
+    "tslint": "^3.14.0",
     "typescript": "^2.0.0"
   },
   "dependencies": {

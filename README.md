@@ -6,12 +6,13 @@
 
 ## usage from cli
 
-+ `npm i rev-static -g`
-+ `rev-static foo.js bar.ejs.html -o bar.html`
+1. run `npm i rev-static -g`
+2. run `rev-static foo.js bar.ejs.html -o bar.html`
 
-## cli demo
+## cli demo in this repository
 
-`rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html`
+1. download or clone this repository
+2. run `rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html`
 
 ## cli help
 
@@ -40,8 +41,6 @@ rev.revisionCssJs(["foo.js", "bar.css"]).then(variables => {
     rev.revisionHtml(["baz.ejs.html", "qux.ejs.html"], ["baz.html", "qux.html"], variables);
 });
 ```
-
 ## develop
 
-+ `npm run init`
-+ `npm i`
+check `scripts` part in `package.json` file, then run `npm run [a script name]`.
