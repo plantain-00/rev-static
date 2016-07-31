@@ -16,17 +16,18 @@ function showToolVersion() {
 
 function showHelpInformation(code: number) {
     showToolVersion();
-    console.log("Syntax:          rev-static [options] [file ...]");
+    console.log("Syntax:            rev-static [options] [file ...]");
     console.log("Examples:");
     console.log("  %> rev-static foo.js bar.ejs.html -o bar.html");
     console.log("  %> rev-static foo.js bar.css baz.ejs.html -o baz.html");
     console.log("  %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html");
     console.log("  %> rev-static foo.js bar.css -j version.json");
     console.log("Options:");
-    console.log("  -o, --out      output html files, seperated by ',' if there are more than 1 file.");
-    console.log("  -h, --help     print this message.");
-    console.log("  -j, --json     output the variables in a json file, can be used by back-end templates.");
-    console.log("  -v, --version  print the tool's version.");
+    console.log("  -o, --out        output html files, seperated by ',' if there are more than 1 file.");
+    console.log("  -h, --help       print this message.");
+    console.log("  -j, --json       output the variables in a json file, can be used by back-end templates.");
+    console.log("  -v, --version    print the tool's version.");
+    console.log("  -- [ejsOptions]  set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
     console.log("");
     process.exit(code);
 }
@@ -54,13 +55,13 @@ export function revisionCssJs(inputFiles: string[]) {
  * the `inputFiles` should be `ejs` templates, the variables will be `versions` from `revisionCssJs` function
  * the `inputFiles` and `outputFiles` should be one-to-one map, eg, input `["foo.ejs.html", "bar.ejs.html"]` and output `["foo.html", "bar.html"]`
  */
-export function revisionHtml(inputFiles: string[], outputFiles: string[], versions: { [name: string]: string }) {
+export function revisionHtml(inputFiles: string[], outputFiles: string[], versions: { [name: string]: string }, ejsOptions?: ejs.Options) {
     if (outputFiles.length !== inputFiles.length) {
         console.log(`Error: input ${inputFiles.length} html files, but output ${outputFiles.length} html files.`);
         showHelpInformation(1);
     }
     for (let i = 0; i < inputFiles.length; i++) {
-        ejs.renderFile(inputFiles[i], versions, {}, (renderError: Error, file: any) => {
+        ejs.renderFile(inputFiles[i], versions, ejsOptions, (renderError: Error, file: any) => {
             if (renderError) {
                 console.log(renderError);
             } else {
@@ -77,7 +78,17 @@ export function revisionHtml(inputFiles: string[], outputFiles: string[], versio
 }
 
 export function executeCommandLine() {
-    const argv = minimist(process.argv.slice(2));
+    const argv = minimist(process.argv.slice(2), {
+        "--": true
+    });
+    let ejsOptions: ejs.Options;
+    if (argv["--"]) {
+        const ejsArgv = minimist(argv["--"]);
+        delete ejsArgv._;
+        ejsOptions = ejsArgv;
+    } else {
+        ejsOptions = {};
+    }
     const showHelp = argv["h"] || argv["help"];
     if (showHelp) {
         showHelpInformation(0);
@@ -128,5 +139,5 @@ export function executeCommandLine() {
         showHelpInformation(1);
     }
     const htmlOutputFiles = outFilesString.split(",");
-    revisionHtml(htmlInputFiles, htmlOutputFiles, versions);
+    revisionHtml(htmlInputFiles, htmlOutputFiles, versions, ejsOptions);
 }

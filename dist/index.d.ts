@@ -1,3 +1,5 @@
+/// <reference types="ejs" />
+import * as ejs from "ejs";
 /**
  * calculate and return md5 version of all input files
  * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
@@ -13,5 +15,5 @@ export declare function revisionCssJs(inputFiles: string[]): {
  */
 export declare function revisionHtml(inputFiles: string[], outputFiles: string[], versions: {
     [name: string]: string;
-}): void;
+}, ejsOptions?: ejs.Options): void;
 export declare function executeCommandLine(): void;

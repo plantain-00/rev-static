@@ -25,6 +25,7 @@ Options:
   -h, --help     print this message.
   -j, --json     output the variables in a json file, can be used by back-end templates.
   -v, --version  print the tool's version.
+  -- [ejsOptions]  set the ejs' options, eg, `delimiter` or `rmWhitespace`.
 ```
 
 ## usage from nodejs
