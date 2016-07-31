@@ -45,7 +45,7 @@ function globAsync(pattern: string) {
                 resolve(matches);
             }
         });
-    })
+    });
 }
 
 /**
@@ -130,7 +130,7 @@ export function revisionHtml(inputFiles: string[], outputFiles: string[] | ((fil
 
 export function executeCommandLine() {
     const argv = minimist(process.argv.slice(2), {
-        "--": true
+        "--": true,
     });
     let ejsOptions: ejs.Options;
     if (argv["--"]) {

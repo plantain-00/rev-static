@@ -127,7 +127,7 @@ function revisionHtml(inputFiles, outputFiles, newFileNames, options) {
 exports.revisionHtml = revisionHtml;
 function executeCommandLine() {
     var argv = minimist(process.argv.slice(2), {
-        "--": true
+        "--": true,
     });
     var ejsOptions;
     if (argv["--"]) {
