@@ -18,12 +18,12 @@
 ```text
 Syntax:            rev-static [options] [file ...]
 Examples:
-  %> rev-static foo.js bar.ejs.html -o bar.html
-  %> rev-static foo.js bar.css baz.ejs.html -o baz.html
-  %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html
-  %> rev-static foo.js bar.css -j version.json
-  %> rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace
-  %> rev-static *.js bar.ejs.html -o bar.html
+   rev-static foo.js bar.ejs.html -o bar.html
+   rev-static foo.js bar.css baz.ejs.html -o baz.html
+   rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html
+   rev-static foo.js bar.css -j version.json
+   rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace
+   rev-static *.js bar.ejs.html -o bar.html
 Options:
   -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.
   -h, --help           print this message.
@@ -36,8 +36,9 @@ Options:
 
 ```js
 var rev = require("rev-static");
-var versions = rev.revisionCssJs(["foo.js", "bar.css"]);
-rev.revisionHtml(["baz.ejs.html", "qux.ejs.html"], ["baz.html", "qux.html"], versions);
+rev.revisionCssJs(["foo.js", "bar.css"]).then(variables => {
+    rev.revisionHtml(["baz.ejs.html", "qux.ejs.html"], ["baz.html", "qux.html"], variables);
+});
 ```
 
 ## develop

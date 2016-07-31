@@ -20,12 +20,12 @@ function showHelpInformation() {
     showToolVersion();
     console.log("Syntax:            rev-static [options] [file ...]");
     console.log("Examples:");
-    console.log("  %> rev-static foo.js bar.ejs.html -o bar.html");
-    console.log("  %> rev-static foo.js bar.css baz.ejs.html -o baz.html");
-    console.log("  %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html");
-    console.log("  %> rev-static foo.js bar.css -j version.json");
-    console.log("  %> rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
-    console.log("  %> rev-static *.js bar.ejs.html -o bar.html");
+    console.log("   rev-static foo.js bar.ejs.html -o bar.html");
+    console.log("   rev-static foo.js bar.css baz.ejs.html -o baz.html");
+    console.log("   rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html");
+    console.log("   rev-static foo.js bar.css -j version.json");
+    console.log("   rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
+    console.log("   rev-static *.js bar.ejs.html -o bar.html");
     console.log("Options:");
     console.log("  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.");
     console.log("  -h, --help           print this message.");
