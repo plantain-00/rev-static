@@ -1,14 +1,19 @@
+/// <reference types="bluebird" />
 /// <reference types="ejs" />
 import * as ejs from "ejs";
+import * as Promise from "bluebird";
 /**
  * calculate and return md5 version of all input files
  * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
- * you can change the rule of generating new file names, by the optional `customNewFileName` parameter
+ * you can change the rule of generating new file names, by the optional `customNewFileName` in `options` parameter
  * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
  */
-export declare function revisionCssJs(inputFiles: string[], customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string): {
+export declare function revisionCssJs(inputFiles: string[], options?: {
+    customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
+    delimiter?: string;
+}): Promise<{
     [name: string]: string;
-};
+}>;
 /**
  * generate html files just as the `outputFiles` shows
  * the `inputFiles` should be `ejs` templates, the variables will be `versions` from `revisionCssJs` function

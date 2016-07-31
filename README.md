@@ -21,6 +21,7 @@ Examples:
   %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html
   %> rev-static foo.js bar.css -j version.json
   %> rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace
+  %> rev-static *.js bar.ejs.html -o bar.html
 Options:
   -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.
   -h, --help           print this message.

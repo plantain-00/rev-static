@@ -5,14 +5,18 @@ var crypto = require("crypto");
 var minimist = require("minimist");
 var camelcase = require("camelcase");
 var path = require("path");
+var glob = require("glob");
+var Promise = require("bluebird");
 var packageJson = require("../package.json");
+var flatten = require("lodash.flatten");
+var uniq = require("lodash.uniq");
 function md5(str) {
     return crypto.createHash("md5").update(str).digest("hex");
 }
 function showToolVersion() {
     console.log("Version: " + packageJson.version);
 }
-function showHelpInformation(code) {
+function showHelpInformation() {
     showToolVersion();
     console.log("Syntax:            rev-static [options] [file ...]");
     console.log("Examples:");
@@ -21,41 +25,56 @@ function showHelpInformation(code) {
     console.log("  %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html");
     console.log("  %> rev-static foo.js bar.css -j version.json");
     console.log("  %> rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
+    console.log("  %> rev-static *.js bar.ejs.html -o bar.html");
     console.log("Options:");
     console.log("  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.");
     console.log("  -h, --help           print this message.");
     console.log("  -j, --json [file]    output the variables in a json file, can be used by back-end templates.");
     console.log("  -v, --version        print the tool's version.");
     console.log("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
-    console.log("");
-    process.exit(code);
+}
+function globAsync(pattern) {
+    return new Promise(function (resolve, reject) {
+        glob(pattern, function (error, matches) {
+            if (error) {
+                reject(error);
+            }
+            else {
+                resolve(matches);
+            }
+        });
+    });
 }
 /**
  * calculate and return md5 version of all input files
  * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
- * you can change the rule of generating new file names, by the optional `customNewFileName` parameter
+ * you can change the rule of generating new file names, by the optional `customNewFileName` in `options` parameter
  * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
  */
-function revisionCssJs(inputFiles, customNewFileName) {
+function revisionCssJs(inputFiles, options) {
     var variables = {};
-    for (var _i = 0, inputFiles_1 = inputFiles; _i < inputFiles_1.length; _i++) {
-        var filePath = inputFiles_1[_i];
-        var variableName = camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
-        var fileString = fs.readFileSync(filePath).toString();
-        var md5String = md5(fileString);
-        var newFileName = void 0;
-        var extensionName = path.extname(filePath);
-        var baseName = path.basename(filePath, extensionName);
-        if (customNewFileName) {
-            newFileName = customNewFileName(filePath, fileString, md5String, baseName, extensionName);
+    var delimiter = options && options.delimiter ? options.delimiter : "-";
+    return Promise.all(inputFiles.map(function (f) { return globAsync(f); })).then(function (files) {
+        var allFiles = uniq(flatten(files));
+        for (var _i = 0, allFiles_1 = allFiles; _i < allFiles_1.length; _i++) {
+            var filePath = allFiles_1[_i];
+            var variableName = camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
+            var fileString = fs.readFileSync(filePath).toString();
+            var md5String = md5(fileString);
+            var newFileName = void 0;
+            var extensionName = path.extname(filePath);
+            var baseName = path.basename(filePath, extensionName);
+            if (options && options.customNewFileName) {
+                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName);
+            }
+            else {
+                newFileName = baseName + delimiter + md5String + extensionName;
+            }
+            fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
+            variables[variableName] = newFileName;
         }
-        else {
-            newFileName = baseName + "-" + md5String + extensionName;
-        }
-        fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
-        variables[variableName] = newFileName;
-    }
-    return variables;
+        return variables;
+    });
 }
 exports.revisionCssJs = revisionCssJs;
 /**
@@ -67,7 +86,8 @@ exports.revisionCssJs = revisionCssJs;
 function revisionHtml(inputFiles, outputFiles, newFileNames, ejsOptions) {
     if (outputFiles.length !== inputFiles.length) {
         console.log("Error: input " + inputFiles.length + " html files, but output " + outputFiles.length + " html files.");
-        showHelpInformation(1);
+        showHelpInformation();
+        return;
     }
     var _loop_1 = function(i) {
         ejs.renderFile(inputFiles[i], newFileNames, ejsOptions, function (renderError, file) {
@@ -106,25 +126,28 @@ function executeCommandLine() {
     }
     var showHelp = argv["h"] || argv["help"];
     if (showHelp) {
-        showHelpInformation(0);
+        showHelpInformation();
+        return;
     }
     var showVersion = argv["v"] || argv["version"];
     if (showVersion) {
         showToolVersion();
-        process.exit(0);
+        return;
     }
     var inputFiles = argv["_"];
     if (!inputFiles || inputFiles.length === 0) {
         console.log("Error: no input files.");
-        showHelpInformation(1);
+        showHelpInformation();
+        return;
     }
     var htmlInputFiles = [];
     var jsCssInputFiles = [];
-    for (var _i = 0, inputFiles_2 = inputFiles; _i < inputFiles_2.length; _i++) {
-        var file = inputFiles_2[_i];
+    for (var _i = 0, inputFiles_1 = inputFiles; _i < inputFiles_1.length; _i++) {
+        var file = inputFiles_1[_i];
         if (!fs.existsSync(file)) {
             console.log("Error: file: \"" + file + "\" not exists.");
-            showHelpInformation(1);
+            showHelpInformation();
+            return;
         }
         var extensionName = path.extname(file);
         if ([".html", ".htm", "ejs"].indexOf(extensionName.toLowerCase()) !== -1) {
@@ -134,29 +157,33 @@ function executeCommandLine() {
             jsCssInputFiles.push(file);
         }
     }
-    var newFileNames = revisionCssJs(jsCssInputFiles);
-    console.log("New File Names: " + JSON.stringify(newFileNames, null, "  "));
-    var json = argv["j"] || argv["json"];
-    if (json === true) {
-        console.log("Warn: expect path of json file.");
-    }
-    else if (typeof json === "string") {
-        fs.writeFile(json, JSON.stringify(newFileNames, null, "  "), function (error) {
-            if (error) {
-                console.log(error);
-            }
-            else {
-                console.log("Success: to \"" + json + "\".");
-            }
-        });
-    }
-    var outFilesString = argv["o"] || argv["out"];
-    if (typeof outFilesString !== "string") {
-        console.log("Error: invalid parameter: \"-o\".");
-        showHelpInformation(1);
-    }
-    var htmlOutputFiles = outFilesString.split(",");
-    revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, ejsOptions);
+    revisionCssJs(jsCssInputFiles).then(function (newFileNames) {
+        console.log("New File Names: " + JSON.stringify(newFileNames, null, "  "));
+        var json = argv["j"] || argv["json"];
+        if (json === true) {
+            console.log("Warn: expect path of json file.");
+        }
+        else if (typeof json === "string") {
+            fs.writeFile(json, JSON.stringify(newFileNames, null, "  "), function (error) {
+                if (error) {
+                    console.log(error);
+                }
+                else {
+                    console.log("Success: to \"" + json + "\".");
+                }
+            });
+        }
+        var outFilesString = argv["o"] || argv["out"];
+        if (typeof outFilesString !== "string") {
+            console.log("Error: invalid parameter: \"-o\".");
+            showHelpInformation();
+            return;
+        }
+        var htmlOutputFiles = outFilesString.split(",");
+        revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, ejsOptions);
+    }, function (error) {
+        console.log(error);
+    });
 }
 exports.executeCommandLine = executeCommandLine;
 //# sourceMappingURL=index.js.map
