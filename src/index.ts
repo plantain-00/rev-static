@@ -53,6 +53,7 @@ function globAsync(pattern: string) {
  * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
  * you can change the rule of generating new file names, by the optional `customNewFileName` in `options` parameter
  * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
+ * `inputFiles` support glob
  */
 export function revisionCssJs(inputFiles: string[], options?: {
     customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
@@ -82,33 +83,49 @@ export function revisionCssJs(inputFiles: string[], options?: {
     });
 }
 
+function getOutputFiles(inputFiles: string[], outputFiles: string[] | ((file: string) => string)) {
+    if (typeof outputFiles === "function") {
+        return Promise.all(inputFiles.map(f => globAsync(f))).then(files => uniq(flatten(files)).map(f => (outputFiles as (file: string) => string)(f)));
+    } else {
+        if (outputFiles.length !== inputFiles.length) {
+            return Promise.reject(`Error: input ${inputFiles.length} html files, but output ${outputFiles.length} html files.`);
+        }
+        return Promise.resolve(outputFiles);
+    }
+}
+
 /**
  * generate html files just as the `outputFiles` shows
  * the `inputFiles` should be `ejs` templates, the variables will be `versions` from `revisionCssJs` function
  * the `inputFiles` and `outputFiles` should be one-to-one map, eg, input `["foo.ejs.html", "bar.ejs.html"]` and output `["foo.html", "bar.html"]`
- * the `ejsOptions` will be transfered to ejs
+ * the `ejsOptions` in `options` will be transfered to ejs
+ * the `outputFiles` can be a function, in this case, `inputFiles` support glob
  */
-export function revisionHtml(inputFiles: string[], outputFiles: string[], newFileNames: { [name: string]: string }, ejsOptions?: ejs.Options) {
-    if (outputFiles.length !== inputFiles.length) {
-        console.log(`Error: input ${inputFiles.length} html files, but output ${outputFiles.length} html files.`);
+export function revisionHtml(inputFiles: string[], outputFiles: string[] | ((file: string) => string), newFileNames: { [name: string]: string }, options?: {
+    ejsOptions?: ejs.Options
+}) {
+    getOutputFiles(inputFiles, outputFiles).then(finalOutputFiles => {
+        const ejsOptions = options && options.ejsOptions ? options.ejsOptions : {};
+        for (let i = 0; i < inputFiles.length; i++) {
+            ejs.renderFile(inputFiles[i], newFileNames, ejsOptions, (renderError: Error, file: any) => {
+                if (renderError) {
+                    console.log(renderError);
+                } else {
+                    fs.writeFile(finalOutputFiles[i], file, writeError => {
+                        if (writeError) {
+                            console.log(writeError);
+                        } else {
+                            console.log(`Success: to "${finalOutputFiles[i]}" from "${inputFiles[i]}".`);
+                        }
+                    });
+                }
+            });
+        }
+    }, error => {
+        console.log(error);
         showHelpInformation();
-        return;
-    }
-    for (let i = 0; i < inputFiles.length; i++) {
-        ejs.renderFile(inputFiles[i], newFileNames, ejsOptions, (renderError: Error, file: any) => {
-            if (renderError) {
-                console.log(renderError);
-            } else {
-                fs.writeFile(outputFiles[i], file, writeError => {
-                    if (writeError) {
-                        console.log(writeError);
-                    } else {
-                        console.log(`Success: to "${outputFiles[i]}" from "${inputFiles[i]}".`);
-                    }
-                });
-            }
-        });
-    }
+    });
+
 }
 
 export function executeCommandLine() {
@@ -177,8 +194,9 @@ export function executeCommandLine() {
             return;
         }
         const htmlOutputFiles = outFilesString.split(",");
-        revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, ejsOptions);
+        revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions });
     }, (error: Error) => {
         console.log(error);
+        showHelpInformation();
     });
 }

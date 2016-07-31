@@ -50,6 +50,7 @@ function globAsync(pattern) {
  * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
  * you can change the rule of generating new file names, by the optional `customNewFileName` in `options` parameter
  * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
+ * `inputFiles` support glob
  */
 function revisionCssJs(inputFiles, options) {
     var variables = {};
@@ -77,38 +78,51 @@ function revisionCssJs(inputFiles, options) {
     });
 }
 exports.revisionCssJs = revisionCssJs;
+function getOutputFiles(inputFiles, outputFiles) {
+    if (typeof outputFiles === "function") {
+        return Promise.all(inputFiles.map(function (f) { return globAsync(f); })).then(function (files) { return uniq(flatten(files)).map(function (f) { return outputFiles(f); }); });
+    }
+    else {
+        if (outputFiles.length !== inputFiles.length) {
+            return Promise.reject("Error: input " + inputFiles.length + " html files, but output " + outputFiles.length + " html files.");
+        }
+        return Promise.resolve(outputFiles);
+    }
+}
 /**
  * generate html files just as the `outputFiles` shows
  * the `inputFiles` should be `ejs` templates, the variables will be `versions` from `revisionCssJs` function
  * the `inputFiles` and `outputFiles` should be one-to-one map, eg, input `["foo.ejs.html", "bar.ejs.html"]` and output `["foo.html", "bar.html"]`
- * the `ejsOptions` will be transfered to ejs
+ * the `ejsOptions` in `options` will be transfered to ejs
+ * the `outputFiles` can be a function, in this case, `inputFiles` support glob
  */
-function revisionHtml(inputFiles, outputFiles, newFileNames, ejsOptions) {
-    if (outputFiles.length !== inputFiles.length) {
-        console.log("Error: input " + inputFiles.length + " html files, but output " + outputFiles.length + " html files.");
+function revisionHtml(inputFiles, outputFiles, newFileNames, options) {
+    getOutputFiles(inputFiles, outputFiles).then(function (finalOutputFiles) {
+        var ejsOptions = options && options.ejsOptions ? options.ejsOptions : {};
+        var _loop_1 = function(i) {
+            ejs.renderFile(inputFiles[i], newFileNames, ejsOptions, function (renderError, file) {
+                if (renderError) {
+                    console.log(renderError);
+                }
+                else {
+                    fs.writeFile(finalOutputFiles[i], file, function (writeError) {
+                        if (writeError) {
+                            console.log(writeError);
+                        }
+                        else {
+                            console.log("Success: to \"" + finalOutputFiles[i] + "\" from \"" + inputFiles[i] + "\".");
+                        }
+                    });
+                }
+            });
+        };
+        for (var i = 0; i < inputFiles.length; i++) {
+            _loop_1(i);
+        }
+    }, function (error) {
+        console.log(error);
         showHelpInformation();
-        return;
-    }
-    var _loop_1 = function(i) {
-        ejs.renderFile(inputFiles[i], newFileNames, ejsOptions, function (renderError, file) {
-            if (renderError) {
-                console.log(renderError);
-            }
-            else {
-                fs.writeFile(outputFiles[i], file, function (writeError) {
-                    if (writeError) {
-                        console.log(writeError);
-                    }
-                    else {
-                        console.log("Success: to \"" + outputFiles[i] + "\" from \"" + inputFiles[i] + "\".");
-                    }
-                });
-            }
-        });
-    };
-    for (var i = 0; i < inputFiles.length; i++) {
-        _loop_1(i);
-    }
+    });
 }
 exports.revisionHtml = revisionHtml;
 function executeCommandLine() {
@@ -180,9 +194,10 @@ function executeCommandLine() {
             return;
         }
         var htmlOutputFiles = outFilesString.split(",");
-        revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, ejsOptions);
+        revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: ejsOptions });
     }, function (error) {
         console.log(error);
+        showHelpInformation();
     });
 }
 exports.executeCommandLine = executeCommandLine;
