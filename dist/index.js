@@ -20,30 +20,40 @@ function showHelpInformation(code) {
     console.log("  %> rev-static foo.js bar.css baz.ejs.html -o baz.html");
     console.log("  %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html");
     console.log("  %> rev-static foo.js bar.css -j version.json");
+    console.log("  %> rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
     console.log("Options:");
-    console.log("  -o, --out        output html files, seperated by ',' if there are more than 1 file.");
-    console.log("  -h, --help       print this message.");
-    console.log("  -j, --json       output the variables in a json file, can be used by back-end templates.");
-    console.log("  -v, --version    print the tool's version.");
-    console.log("  -- [ejsOptions]  set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
+    console.log("  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.");
+    console.log("  -h, --help           print this message.");
+    console.log("  -j, --json [file]    output the variables in a json file, can be used by back-end templates.");
+    console.log("  -v, --version        print the tool's version.");
+    console.log("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
     console.log("");
     process.exit(code);
 }
 /**
  * calculate and return md5 version of all input files
  * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
+ * you can change the rule of generating new file names, by the optional `customNewFileName` parameter
  * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
  */
-function revisionCssJs(inputFiles) {
+function revisionCssJs(inputFiles, customNewFileName) {
     var variables = {};
     for (var _i = 0, inputFiles_1 = inputFiles; _i < inputFiles_1.length; _i++) {
-        var file = inputFiles_1[_i];
-        var variableName = camelcase(path.normalize(file).replace(/\\|\//g, "-"));
-        var fileVersion = md5(fs.readFileSync(file).toString());
-        var extensionName = path.extname(file);
-        var newPath = path.resolve(path.dirname(file), path.basename(file, extensionName) + "-" + fileVersion + extensionName);
-        fs.createReadStream(file).pipe(fs.createWriteStream(newPath));
-        variables[variableName] = fileVersion;
+        var filePath = inputFiles_1[_i];
+        var variableName = camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
+        var fileString = fs.readFileSync(filePath).toString();
+        var md5String = md5(fileString);
+        var newFileName = void 0;
+        var extensionName = path.extname(filePath);
+        var baseName = path.basename(filePath, extensionName);
+        if (customNewFileName) {
+            newFileName = customNewFileName(filePath, fileString, md5String, baseName, extensionName);
+        }
+        else {
+            newFileName = baseName + "-" + md5String + extensionName;
+        }
+        fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
+        variables[variableName] = newFileName;
     }
     return variables;
 }
@@ -52,14 +62,15 @@ exports.revisionCssJs = revisionCssJs;
  * generate html files just as the `outputFiles` shows
  * the `inputFiles` should be `ejs` templates, the variables will be `versions` from `revisionCssJs` function
  * the `inputFiles` and `outputFiles` should be one-to-one map, eg, input `["foo.ejs.html", "bar.ejs.html"]` and output `["foo.html", "bar.html"]`
+ * the `ejsOptions` will be transfered to ejs
  */
-function revisionHtml(inputFiles, outputFiles, versions, ejsOptions) {
+function revisionHtml(inputFiles, outputFiles, newFileNames, ejsOptions) {
     if (outputFiles.length !== inputFiles.length) {
         console.log("Error: input " + inputFiles.length + " html files, but output " + outputFiles.length + " html files.");
         showHelpInformation(1);
     }
     var _loop_1 = function(i) {
-        ejs.renderFile(inputFiles[i], versions, ejsOptions, function (renderError, file) {
+        ejs.renderFile(inputFiles[i], newFileNames, ejsOptions, function (renderError, file) {
             if (renderError) {
                 console.log(renderError);
             }
@@ -123,14 +134,14 @@ function executeCommandLine() {
             jsCssInputFiles.push(file);
         }
     }
-    var versions = revisionCssJs(jsCssInputFiles);
-    console.log("Versions: \n" + JSON.stringify(versions, null, "  "));
+    var newFileNames = revisionCssJs(jsCssInputFiles);
+    console.log("New File Names: " + JSON.stringify(newFileNames, null, "  "));
     var json = argv["j"] || argv["json"];
     if (json === true) {
         console.log("Warn: expect path of json file.");
     }
     else if (typeof json === "string") {
-        fs.writeFile(json, JSON.stringify(versions, null, "  "), function (error) {
+        fs.writeFile(json, JSON.stringify(newFileNames, null, "  "), function (error) {
             if (error) {
                 console.log(error);
             }
@@ -145,7 +156,7 @@ function executeCommandLine() {
         showHelpInformation(1);
     }
     var htmlOutputFiles = outFilesString.split(",");
-    revisionHtml(htmlInputFiles, htmlOutputFiles, versions, ejsOptions);
+    revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, ejsOptions);
 }
 exports.executeCommandLine = executeCommandLine;
 //# sourceMappingURL=index.js.map

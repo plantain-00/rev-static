@@ -14,18 +14,19 @@
 ## cli help
 
 ```text
-Syntax:          rev-static [options] [file ...]
+Syntax:            rev-static [options] [file ...]
 Examples:
   %> rev-static foo.js bar.ejs.html -o bar.html
   %> rev-static foo.js bar.css baz.ejs.html -o baz.html
   %> rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html
   %> rev-static foo.js bar.css -j version.json
+  %> rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace
 Options:
-  -o, --out      output html files, seperated by ',' if there are more than 1 file.
-  -h, --help     print this message.
-  -j, --json     output the variables in a json file, can be used by back-end templates.
-  -v, --version  print the tool's version.
-  -- [ejsOptions]  set the ejs' options, eg, `delimiter` or `rmWhitespace`.
+  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.
+  -h, --help           print this message.
+  -j, --json [file]    output the variables in a json file, can be used by back-end templates.
+  -v, --version        print the tool's version.
+  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.
 ```
 
 ## usage from nodejs
