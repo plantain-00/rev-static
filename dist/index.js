@@ -13,7 +13,7 @@ var uniq = require("lodash.uniq");
 function md5(str) {
     return crypto.createHash("md5").update(str).digest("hex");
 }
-function sha256(str) {
+function calculateSha(str, shaType) {
     return crypto.createHash("sha256").update(str).digest("base64");
 }
 function showToolVersion() {
@@ -35,6 +35,7 @@ function showHelpInformation() {
     console.log("  -j, --json [file]    output the variables in a json file, can be used by back-end templates.");
     console.log("  -v, --version        print the tool's version.");
     console.log("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
+    console.log("  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.");
 }
 function globAsync(pattern) {
     return new Promise(function (resolve, reject) {
@@ -56,7 +57,7 @@ function globAsync(pattern) {
  * `inputFiles` support glob
  */
 function revisionCssJs(inputFiles, options) {
-    var variables = { sri: {} };
+    var variables = ((options && options.shaType) ? { sri: {} } : {});
     var delimiter = options && options.delimiter ? options.delimiter : "-";
     return Promise.all(inputFiles.map(function (f) { return globAsync(f); })).then(function (files) {
         var allFiles = uniq(flatten(files));
@@ -65,19 +66,20 @@ function revisionCssJs(inputFiles, options) {
             var variableName = camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
             var fileString = fs.readFileSync(filePath).toString();
             var md5String = md5(fileString);
-            var sha256String = sha256(fileString);
             var newFileName = void 0;
             var extensionName = path.extname(filePath);
             var baseName = path.basename(filePath, extensionName);
             if (options && options.customNewFileName) {
-                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName, sha256String);
+                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName);
             }
             else {
                 newFileName = baseName + delimiter + md5String + extensionName;
             }
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
             variables[variableName] = newFileName;
-            variables.sri[variableName] = "sha256-" + sha256String;
+            if (options && options.shaType) {
+                variables.sri[variableName] = ("sha" + options.shaType + "-") + calculateSha(fileString, options.shaType);
+            }
         }
         return variables;
     });
@@ -159,6 +161,14 @@ function executeCommandLine() {
         showHelpInformation();
         return;
     }
+    var shaType = argv["sha"];
+    if (shaType) {
+        if ([256, 384, 512].indexOf(shaType) === -1) {
+            console.log("Error: invalid parameter `sha`.");
+            showHelpInformation();
+            return;
+        }
+    }
     var htmlInputFiles = [];
     var jsCssInputFiles = [];
     for (var _i = 0, inputFiles_1 = inputFiles; _i < inputFiles_1.length; _i++) {
@@ -176,7 +186,7 @@ function executeCommandLine() {
             jsCssInputFiles.push(file);
         }
     }
-    revisionCssJs(jsCssInputFiles).then(function (newFileNames) {
+    revisionCssJs(jsCssInputFiles, { shaType: shaType }).then(function (newFileNames) {
         console.log("New File Names: " + JSON.stringify(newFileNames, null, "  "));
         var json = argv["j"] || argv["json"];
         if (json === true) {

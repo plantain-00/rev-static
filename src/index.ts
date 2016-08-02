@@ -14,7 +14,7 @@ function md5(str: string): string {
     return crypto.createHash("md5").update(str).digest("hex");
 }
 
-function sha256(str: string): string {
+function calculateSha(str: string, shaType: number): string {
     return crypto.createHash("sha256").update(str).digest("base64");
 }
 
@@ -38,6 +38,7 @@ function showHelpInformation() {
     console.log("  -j, --json [file]    output the variables in a json file, can be used by back-end templates.");
     console.log("  -v, --version        print the tool's version.");
     console.log("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
+    console.log("  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.");
 }
 
 function globAsync(pattern: string) {
@@ -60,10 +61,11 @@ function globAsync(pattern: string) {
  * `inputFiles` support glob
  */
 export function revisionCssJs(inputFiles: string[], options?: {
-    customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string, sha256String: string) => string;
+    customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
     delimiter?: string;
+    shaType?: number | undefined;
 }): Promise<{ sri: { [name: string]: string } } & { [name: string]: string }> {
-    const variables = { sri: {} } as { sri: { [name: string]: string } } & { [name: string]: string };
+    const variables = ((options && options.shaType) ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
     const delimiter = options && options.delimiter ? options.delimiter : "-";
     return Promise.all(inputFiles.map(f => globAsync(f))).then(files => {
         const allFiles = uniq(flatten(files));
@@ -71,18 +73,19 @@ export function revisionCssJs(inputFiles: string[], options?: {
             const variableName = camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
             const fileString = fs.readFileSync(filePath).toString();
             const md5String = md5(fileString);
-            const sha256String = sha256(fileString);
             let newFileName: string;
             const extensionName = path.extname(filePath);
             const baseName = path.basename(filePath, extensionName);
             if (options && options.customNewFileName) {
-                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName, sha256String);
+                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName);
             } else {
                 newFileName = baseName + delimiter + md5String + extensionName;
             }
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
             variables[variableName] = newFileName;
-            variables.sri[variableName] = "sha256-" + sha256String;
+            if (options && options.shaType) {
+                variables.sri[variableName] = `sha${options.shaType}-` + calculateSha(fileString, options.shaType);
+            }
         }
         return variables;
     });
@@ -162,6 +165,14 @@ export function executeCommandLine() {
         showHelpInformation();
         return;
     }
+    const shaType: number | undefined = argv["sha"];
+    if (shaType) {
+        if ([256, 384, 512].indexOf(shaType) === -1) {
+            console.log("Error: invalid parameter `sha`.");
+            showHelpInformation();
+            return;
+        }
+    }
     const htmlInputFiles: string[] = [];
     const jsCssInputFiles: string[] = [];
     for (const file of inputFiles) {
@@ -177,7 +188,7 @@ export function executeCommandLine() {
             jsCssInputFiles.push(file);
         }
     }
-    revisionCssJs(jsCssInputFiles).then(newFileNames => {
+    revisionCssJs(jsCssInputFiles, { shaType }).then(newFileNames => {
         console.log(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
         const json: string | boolean = argv["j"] || argv["json"];
         if (json === true) {

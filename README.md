@@ -20,7 +20,7 @@
 ## cli demo in this repository
 
 1. download or clone this repository
-2. run `rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html`
+2. run `rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html --sha 256`
 
 ## cli help
 
@@ -39,6 +39,7 @@ Options:
   -j, --json [file]    output the variables in a json file, can be used by back-end templates.
   -v, --version        print the tool's version.
   -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.
+  --sha [type]         calculate sha of files, type can be `256`, `384` or `sha512`.
 ```
 
 ## usage from nodejs
