@@ -10,9 +10,13 @@ import * as Promise from "bluebird";
  * `inputFiles` support glob
  */
 export declare function revisionCssJs(inputFiles: string[], options?: {
-    customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
+    customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string, sha256String: string) => string;
     delimiter?: string;
 }): Promise<{
+    sri: {
+        [name: string]: string;
+    };
+} & {
     [name: string]: string;
 }>;
 /**

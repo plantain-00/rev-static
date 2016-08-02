@@ -13,6 +13,9 @@ var uniq = require("lodash.uniq");
 function md5(str) {
     return crypto.createHash("md5").update(str).digest("hex");
 }
+function sha256(str) {
+    return crypto.createHash("sha256").update(str).digest("base64");
+}
 function showToolVersion() {
     console.log("Version: " + packageJson.version);
 }
@@ -53,7 +56,7 @@ function globAsync(pattern) {
  * `inputFiles` support glob
  */
 function revisionCssJs(inputFiles, options) {
-    var variables = {};
+    var variables = { sri: {} };
     var delimiter = options && options.delimiter ? options.delimiter : "-";
     return Promise.all(inputFiles.map(function (f) { return globAsync(f); })).then(function (files) {
         var allFiles = uniq(flatten(files));
@@ -62,17 +65,19 @@ function revisionCssJs(inputFiles, options) {
             var variableName = camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
             var fileString = fs.readFileSync(filePath).toString();
             var md5String = md5(fileString);
+            var sha256String = sha256(fileString);
             var newFileName = void 0;
             var extensionName = path.extname(filePath);
             var baseName = path.basename(filePath, extensionName);
             if (options && options.customNewFileName) {
-                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName);
+                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName, sha256String);
             }
             else {
                 newFileName = baseName + delimiter + md5String + extensionName;
             }
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
             variables[variableName] = newFileName;
+            variables.sri[variableName] = "sha256-" + sha256String;
         }
         return variables;
     });

@@ -1,6 +1,6 @@
 {
   "name": "rev-static",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
@@ -15,7 +15,10 @@
   },
   "keywords": [
     "rev",
-    "version"
+    "static",
+    "version",
+    "sri",
+    "subresource integrity"
   ],
   "author": "york yao",
   "license": "MIT",

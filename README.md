@@ -4,6 +4,14 @@
 [![npm version](https://badge.fury.io/js/rev-static.svg)](https://badge.fury.io/js/rev-static)
 [![Downloads](https://img.shields.io/npm/dm/rev-static.svg)](https://www.npmjs.com/package/rev-static)
 
+## features
+
++ add version in file name for css and js files
++ change file name of css and js files in html files
++ calculate sha256 for css and js files, then add it in `integrity` property
++ export versions and sha256 strings to a json file
++ support glob
+
 ## usage from cli
 
 1. run `npm i rev-static -g`

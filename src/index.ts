@@ -14,6 +14,10 @@ function md5(str: string): string {
     return crypto.createHash("md5").update(str).digest("hex");
 }
 
+function sha256(str: string): string {
+    return crypto.createHash("sha256").update(str).digest("base64");
+}
+
 function showToolVersion() {
     console.log(`Version: ${packageJson.version}`);
 }
@@ -56,10 +60,10 @@ function globAsync(pattern: string) {
  * `inputFiles` support glob
  */
 export function revisionCssJs(inputFiles: string[], options?: {
-    customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
+    customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string, sha256String: string) => string;
     delimiter?: string;
-}): Promise<{ [name: string]: string }> {
-    const variables: { [name: string]: string } = {};
+}): Promise<{ sri: { [name: string]: string } } & { [name: string]: string }> {
+    const variables = { sri: {} } as { sri: { [name: string]: string } } & { [name: string]: string };
     const delimiter = options && options.delimiter ? options.delimiter : "-";
     return Promise.all(inputFiles.map(f => globAsync(f))).then(files => {
         const allFiles = uniq(flatten(files));
@@ -67,17 +71,18 @@ export function revisionCssJs(inputFiles: string[], options?: {
             const variableName = camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
             const fileString = fs.readFileSync(filePath).toString();
             const md5String = md5(fileString);
+            const sha256String = sha256(fileString);
             let newFileName: string;
             const extensionName = path.extname(filePath);
             const baseName = path.basename(filePath, extensionName);
             if (options && options.customNewFileName) {
-                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName);
+                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName, sha256String);
             } else {
-
                 newFileName = baseName + delimiter + md5String + extensionName;
             }
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
             variables[variableName] = newFileName;
+            variables.sri[variableName] = "sha256-" + sha256String;
         }
         return variables;
     });
