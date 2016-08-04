@@ -39,7 +39,7 @@ Options:
   -j, --json [file]    output the variables in a json file, can be used by back-end templates.
   -v, --version        print the tool's version.
   -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.
-  --sha [type]         calculate sha of files, type can be `256`, `384` or `sha512`.
+  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.
 ```
 
 ## usage from nodejs
