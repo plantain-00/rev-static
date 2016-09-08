@@ -27,20 +27,20 @@
   },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
-    "@types/bluebird": "^3.0.31",
+    "@types/bluebird": "^3.0.32",
     "@types/camelcase": "0.0.29",
     "@types/ejs": "^2.3.29",
     "@types/glob": "^5.0.29",
     "@types/minimist": "^1.1.28",
-    "@types/node": "^6.0.36",
-    "tslint": "^3.14.0",
-    "typescript": "^2.0.0"
+    "@types/node": "^6.0.38",
+    "tslint": "^3.15.1",
+    "typescript": "^2.0.2"
   },
   "dependencies": {
-    "bluebird": "^3.4.1",
+    "bluebird": "^3.4.6",
     "camelcase": "^3.0.0",
-    "ejs": "^2.5.1",
-    "glob": "^7.0.5",
+    "ejs": "^2.5.2",
+    "glob": "^7.0.6",
     "lodash.flatten": "^4.4.0",
     "lodash.uniq": "^4.5.0",
     "minimist": "^1.2.0"
