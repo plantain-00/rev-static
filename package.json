@@ -40,7 +40,7 @@
     "bluebird": "^3.4.6",
     "camelcase": "^3.0.0",
     "ejs": "^2.5.2",
-    "glob": "^7.0.6",
+    "glob": "^7.1.0",
     "lodash.flatten": "^4.4.0",
     "lodash.uniq": "^4.5.0",
     "minimist": "^1.2.0"
