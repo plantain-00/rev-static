@@ -1,0 +1,17 @@
+{
+    "inputFiles": [
+        "demo/foo.js",
+        "demo/bar.css",
+        "demo/baz.ejs.html",
+        "demo/qux.ejs.html"
+    ],
+    "outputFiles": [
+        "demo/baz.html",
+        "demo/qux.html"
+    ],
+    "json": false,
+    "ejsOptions": {
+        "rmWhitespace": true
+    },
+    "sha": 256
+}

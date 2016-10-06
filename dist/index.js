@@ -19,6 +19,7 @@ function calculateSha(str, shaType) {
 function showToolVersion() {
     console.log("Version: " + packageJson.version);
 }
+var defaultConfigName = "rev-static.config.json";
 function showHelpInformation() {
     showToolVersion();
     console.log("Syntax:            rev-static [options] [file ...]");
@@ -36,6 +37,7 @@ function showHelpInformation() {
     console.log("  -v, --version        print the tool's version.");
     console.log("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
     console.log("  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.");
+    console.log("  --config             set the configuration file path, the default configuration file path is '" + defaultConfigName + "'.");
 }
 function globAsync(pattern) {
     return new Promise(function (resolve, reject) {
@@ -136,15 +138,6 @@ function executeCommandLine() {
     var argv = minimist(process.argv.slice(2), {
         "--": true,
     });
-    var ejsOptions;
-    if (argv["--"]) {
-        var ejsArgv = minimist(argv["--"]);
-        delete ejsArgv._;
-        ejsOptions = ejsArgv;
-    }
-    else {
-        ejsOptions = {};
-    }
     var showHelp = argv["h"] || argv["help"];
     if (showHelp) {
         showHelpInformation();
@@ -155,24 +148,54 @@ function executeCommandLine() {
         showToolVersion();
         return;
     }
-    var inputFiles = argv["_"];
-    if (!inputFiles || inputFiles.length === 0) {
+    var config = argv["config"];
+    if (!config) {
+        config = defaultConfigName;
+    }
+    var configPath = path.resolve(process.cwd(), config);
+    var configData;
+    try {
+        configData = require(configPath);
+    }
+    catch (error) {
+        var outFilesString = argv["o"] || argv["out"];
+        if (typeof outFilesString !== "string") {
+            console.log("Error: invalid parameter: \"-o\".");
+            showHelpInformation();
+            return;
+        }
+        var shaType = argv["sha"];
+        if (shaType) {
+            if ([256, 384, 512].indexOf(shaType) === -1) {
+                console.log("Error: invalid parameter `sha`.");
+                showHelpInformation();
+                return;
+            }
+        }
+        configData = {
+            inputFiles: argv["_"],
+            outputFiles: outFilesString.split(","),
+            json: argv["j"] || argv["json"],
+            sha: shaType,
+        };
+        if (argv["--"]) {
+            var ejsArgv = minimist(argv["--"]);
+            delete ejsArgv._;
+            configData.ejsOptions = ejsArgv;
+        }
+        else {
+            configData.ejsOptions = {};
+        }
+    }
+    if (!configData.inputFiles || configData.inputFiles.length === 0) {
         console.log("Error: no input files.");
         showHelpInformation();
         return;
     }
-    var shaType = argv["sha"];
-    if (shaType) {
-        if ([256, 384, 512].indexOf(shaType) === -1) {
-            console.log("Error: invalid parameter `sha`.");
-            showHelpInformation();
-            return;
-        }
-    }
     var htmlInputFiles = [];
     var jsCssInputFiles = [];
-    for (var _i = 0, inputFiles_1 = inputFiles; _i < inputFiles_1.length; _i++) {
-        var file = inputFiles_1[_i];
+    for (var _i = 0, _a = configData.inputFiles; _i < _a.length; _i++) {
+        var file = _a[_i];
         if (!fs.existsSync(file)) {
             console.log("Error: file: \"" + file + "\" not exists.");
             showHelpInformation();
@@ -186,30 +209,22 @@ function executeCommandLine() {
             jsCssInputFiles.push(file);
         }
     }
-    revisionCssJs(jsCssInputFiles, { shaType: shaType }).then(function (newFileNames) {
+    revisionCssJs(jsCssInputFiles, { shaType: configData.sha }).then(function (newFileNames) {
         console.log("New File Names: " + JSON.stringify(newFileNames, null, "  "));
-        var json = argv["j"] || argv["json"];
-        if (json === true) {
+        if (configData.json === true) {
             console.log("Warn: expect path of json file.");
         }
-        else if (typeof json === "string") {
-            fs.writeFile(json, JSON.stringify(newFileNames, null, "  "), function (error) {
+        else if (typeof configData.json === "string") {
+            fs.writeFile(configData.json, JSON.stringify(newFileNames, null, "  "), function (error) {
                 if (error) {
                     console.log(error);
                 }
                 else {
-                    console.log("Success: to \"" + json + "\".");
+                    console.log("Success: to \"" + configData.json + "\".");
                 }
             });
         }
-        var outFilesString = argv["o"] || argv["out"];
-        if (typeof outFilesString !== "string") {
-            console.log("Error: invalid parameter: \"-o\".");
-            showHelpInformation();
-            return;
-        }
-        var htmlOutputFiles = outFilesString.split(",");
-        revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: ejsOptions });
+        revisionHtml(htmlInputFiles, configData.outputFiles, newFileNames, { ejsOptions: configData.ejsOptions });
     }, function (error) {
         console.log(error);
         showHelpInformation();

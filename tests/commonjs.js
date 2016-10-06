@@ -5,9 +5,3 @@ rev.revisionCssJs(["demo/foo.js", "demo/bar.css"], { shaType: 256 }).then(variab
 }, error => {
     console.log(error);
 });
-
-rev.revisionCssJs(["demo/foo.js", "demo/bar.css"]).then(variables => {
-    rev.revisionHtml(["demo/baz.ejs.html", "demo/qux.ejs.html"], filePath => filePath.replace("ejs", "ejs2"), variables);
-}, error => {
-    console.log(error);
-});

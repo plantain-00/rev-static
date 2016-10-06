@@ -11,6 +11,7 @@
 + calculate sha256 for css and js files, then add it in `integrity` property
 + export versions and sha256 strings to a json file
 + support glob
++ support config file for options
 
 ## usage from cli
 
@@ -21,6 +22,7 @@
 
 1. download or clone this repository
 2. run `rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html --sha 256`
+3. or just run `rev-static`(the options is already in `rev-static.config.json`)
 
 ## cli help
 
@@ -40,6 +42,7 @@ Options:
   -v, --version        print the tool's version.
   -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.
   --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.
+  --config             set the configuration file path, the default configuration file path is 'rev-static.config.json'.
 ```
 
 ## usage from nodejs

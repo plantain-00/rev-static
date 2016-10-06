@@ -1,11 +1,11 @@
 {
   "name": "rev-static",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
     "tslint": "tslint src/index.ts",
-    "demo-test": "./bin/rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html --sha 256",
+    "demo-test": "./bin/rev-static",
     "commonjs-test": "node tests/commonjs.js",
     "build": "tsc"
   },
