@@ -35,6 +35,7 @@ Examples:
    rev-static foo.js bar.css -j version.json
    rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace
    rev-static *.js bar.ejs.html -o bar.html
+   rev-static --config rev-static.debug.json
 Options:
   -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.
   -h, --help           print this message.
@@ -42,7 +43,7 @@ Options:
   -v, --version        print the tool's version.
   -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.
   --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.
-  --config             set the configuration file path, the default configuration file path is 'rev-static.config.json'.
+  --config [file]      set the configuration file path, the default configuration file path is 'rev-static.config.json'.
 ```
 
 ## usage from nodejs

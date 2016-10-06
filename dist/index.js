@@ -30,6 +30,7 @@ function showHelpInformation() {
     console.log("   rev-static foo.js bar.css -j version.json");
     console.log("   rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
     console.log("   rev-static *.js bar.ejs.html -o bar.html");
+    console.log("   rev-static --config rev-static.debug.json");
     console.log("Options:");
     console.log("  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.");
     console.log("  -h, --help           print this message.");
@@ -37,7 +38,7 @@ function showHelpInformation() {
     console.log("  -v, --version        print the tool's version.");
     console.log("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
     console.log("  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.");
-    console.log("  --config             set the configuration file path, the default configuration file path is '" + defaultConfigName + "'.");
+    console.log("  --config [file]      set the configuration file path, the default configuration file path is '" + defaultConfigName + "'.");
 }
 function globAsync(pattern) {
     return new Promise(function (resolve, reject) {
