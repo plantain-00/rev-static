@@ -34,13 +34,13 @@
     "@types/minimist": "^1.1.28",
     "@types/node": "^6.0.38",
     "tslint": "^3.15.1",
-    "typescript": "^2.0.2"
+    "typescript": "^2.0.8"
   },
   "dependencies": {
     "bluebird": "^3.4.6",
-    "camelcase": "^3.0.0",
+    "camelcase": "^4.0.0",
     "ejs": "^2.5.2",
-    "glob": "^7.1.0",
+    "glob": "^7.1.1",
     "lodash.flatten": "^4.4.0",
     "lodash.uniq": "^4.5.0",
     "minimist": "^1.2.0"
