@@ -7,14 +7,14 @@ var camelcase = require("camelcase");
 var path = require("path");
 var glob = require("glob");
 var Promise = require("bluebird");
+var flatten = require("lodash/flatten");
+var uniq = require("lodash/uniq");
 var packageJson = require("../package.json");
-var flatten = require("lodash.flatten");
-var uniq = require("lodash.uniq");
 function md5(str) {
     return crypto.createHash("md5").update(str).digest("hex");
 }
 function calculateSha(str, shaType) {
-    return crypto.createHash("sha256").update(str).digest("base64");
+    return crypto.createHash("sha" + shaType).update(str).digest("base64");
 }
 function showToolVersion() {
     console.log("Version: " + packageJson.version);

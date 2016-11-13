@@ -6,16 +6,16 @@ import * as camelcase from "camelcase";
 import * as path from "path";
 import * as glob from "glob";
 import * as Promise from "bluebird";
+import * as flatten from "lodash/flatten";
+import * as uniq from "lodash/uniq";
 const packageJson: { version: string } = require("../package.json");
-const flatten: <T>(array: T[][]) => T[] = require("lodash.flatten");
-const uniq: <T>(array: T[]) => T[] = require("lodash.uniq");
 
 function md5(str: string): string {
     return crypto.createHash("md5").update(str).digest("hex");
 }
 
-function calculateSha(str: string, shaType: number): string {
-    return crypto.createHash("sha256").update(str).digest("base64");
+function calculateSha(str: string, shaType: 256 | 384 | 512): string {
+    return crypto.createHash(`sha${shaType}`).update(str).digest("base64");
 }
 
 function showToolVersion() {
@@ -64,11 +64,13 @@ function globAsync(pattern: string) {
  * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
  * `inputFiles` support glob
  */
-export function revisionCssJs(inputFiles: string[], options?: {
-    customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
-    delimiter?: string;
-    shaType?: number | undefined;
-}): Promise<{ sri: { [name: string]: string } } & { [name: string]: string }> {
+export function revisionCssJs(
+    inputFiles: string[],
+    options?: {
+        customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
+        delimiter?: string;
+        shaType?: 256 | 384 | 512 | undefined;
+    }): Promise<{ sri: { [name: string]: string } } & { [name: string]: string }> {
     const variables = ((options && options.shaType) ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
     const delimiter = options && options.delimiter ? options.delimiter : "-";
     return Promise.all(inputFiles.map(f => globAsync(f))).then(files => {
@@ -168,7 +170,7 @@ export function executeCommandLine() {
         outputFiles: string[];
         json?: boolean;
         ejsOptions?: ejs.Options;
-        sha?: number;
+        sha?: 256 | 384 | 512;
     };
     try {
         configData = require(configPath);
@@ -179,7 +181,7 @@ export function executeCommandLine() {
             showHelpInformation();
             return;
         }
-        const shaType: number | undefined = argv["sha"];
+        const shaType: 256 | 384 | 512 | undefined = argv["sha"];
         if (shaType) {
             if ([256, 384, 512].indexOf(shaType) === -1) {
                 console.log("Error: invalid parameter `sha`.");

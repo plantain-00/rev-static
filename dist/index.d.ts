@@ -12,7 +12,7 @@ import * as Promise from "bluebird";
 export declare function revisionCssJs(inputFiles: string[], options?: {
     customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
     delimiter?: string;
-    shaType?: number | undefined;
+    shaType?: 256 | 384 | 512 | undefined;
 }): Promise<{
     sri: {
         [name: string]: string;
