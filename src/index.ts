@@ -116,7 +116,7 @@ function getOutputFiles(inputFiles: string[], outputFiles: string[] | ((file: st
  * the `outputFiles` can be a function, in this case, `inputFiles` support glob
  */
 export function revisionHtml(inputFiles: string[], outputFiles: string[] | ((file: string) => string), newFileNames: { [name: string]: string }, options?: {
-    ejsOptions?: ejs.Options
+    ejsOptions?: ejs.Options,
 }) {
     getOutputFiles(inputFiles, outputFiles).then(finalOutputFiles => {
         const ejsOptions = options && options.ejsOptions ? options.ejsOptions : {};

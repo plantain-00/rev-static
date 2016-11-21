@@ -22,6 +22,9 @@
             true,
             "ban-keywords"
         ],
-        "no-bitwise": false
+        "no-bitwise": false,
+        "arrow-parens": false,
+        "array-type": [true, "array"],
+        "max-classes-per-file": [false]
     }
 }
