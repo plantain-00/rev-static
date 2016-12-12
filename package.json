@@ -20,30 +20,30 @@
     "sri",
     "subresource integrity"
   ],
-  "author": "york yao",
+  "author": "York Yao",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/plantain-00/rev-static/issues"
   },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
-    "@types/bluebird": "^3.0.32",
-    "@types/camelcase": "0.0.29",
-    "@types/ejs": "^2.3.29",
-    "@types/glob": "^5.0.29",
-    "@types/lodash": "^4.14.38",
-    "@types/minimist": "^1.1.28",
-    "@types/node": "^6.0.38",
-    "tslint": "^4.0.1",
-    "typescript": "^2.0.10"
+    "@types/bluebird": "3.0.36",
+    "@types/camelcase": "0.0.30",
+    "@types/ejs": "2.3.33",
+    "@types/glob": "5.0.30",
+    "@types/lodash": "4.14.38",
+    "@types/minimist": "1.1.29",
+    "@types/node": "6.0.38",
+    "tslint": "4.0.2",
+    "typescript": "2.1.4"
   },
   "dependencies": {
-    "bluebird": "^3.4.6",
-    "camelcase": "^4.0.0",
-    "ejs": "^2.5.2",
-    "glob": "^7.1.1",
-    "lodash": "^4.17.2",
-    "minimist": "^1.2.0"
+    "bluebird": "3.4.6",
+    "camelcase": "4.0.0",
+    "ejs": "2.5.5",
+    "glob": "7.1.1",
+    "lodash": "4.17.2",
+    "minimist": "1.2.0"
   },
   "types": "./dist/index.d.ts",
   "bin": {
