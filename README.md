@@ -6,9 +6,9 @@
 
 ## features
 
-+ add version in file name for css and js files
-+ change file name of css and js files in html files
-+ calculate sha for css and js files, then add it in `integrity` property
++ add version in file name for css and js files(`index.bundle.js`->`index.bundle-caa02e8ba0c5af68e9ac7728da2bed75.js`)
++ change file name of css and js files in html files(`<script src="index.bundle.js"></script>`->`<script src="index.bundle-caa02e8ba0c5af68e9ac7728da2bed75.js"></script>`)
++ calculate sha for css and js files, then add it in `integrity` property(`<script src="index.bundle.js"></script>`->`<script src="index.bundle-caa02e8ba0c5af68e9ac7728da2bed75.js" crossOrigin = "anonymous" integrity="sha256-cHLd68M3ekn8P2d8tYdJIV91nSbWrWsu02yI8MEVvYU="></script>`)
 + export versions and sha strings to a json file
 + support glob
 + support config file for options
