@@ -6,8 +6,8 @@ import * as camelcase from "camelcase";
 import * as path from "path";
 import * as glob from "glob";
 import * as Promise from "bluebird";
-import * as flatten from "lodash/flatten";
-import * as uniq from "lodash/uniq";
+const flatten = require("lodash.flatten");
+const uniq = require("lodash/uniq");
 const packageJson: { version: string } = require("../package.json");
 
 function md5(str: string): string {
@@ -99,7 +99,7 @@ export function revisionCssJs(
 
 function getOutputFiles(inputFiles: string[], outputFiles: string[] | ((file: string) => string)) {
     if (typeof outputFiles === "function") {
-        return Promise.all(inputFiles.map(f => globAsync(f))).then(files => uniq(flatten(files)).map(f => (outputFiles as (file: string) => string)(f)));
+        return Promise.all(inputFiles.map(f => globAsync(f))).then(files => uniq(flatten(files)).map((f: string) => (outputFiles as (file: string) => string)(f)));
     } else {
         if (outputFiles.length !== inputFiles.length) {
             return Promise.reject(`Error: input ${inputFiles.length} html files, but output ${outputFiles.length} html files.`);
