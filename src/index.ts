@@ -7,7 +7,7 @@ import * as path from "path";
 import * as glob from "glob";
 import * as Promise from "bluebird";
 const flatten = require("lodash.flatten");
-const uniq = require("lodash/uniq");
+const uniq = require("lodash.uniq");
 const packageJson: { version: string } = require("../package.json");
 
 function md5(str: string): string {

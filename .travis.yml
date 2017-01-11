@@ -7,7 +7,7 @@ before_script:
   - npm i
 script:
   - npm run build
-  - npm run tslint
+  - npm run lint
   - npm run demo-test
   - npm run commonjs-test
 env:

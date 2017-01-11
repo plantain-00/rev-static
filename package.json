@@ -4,7 +4,7 @@
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
-    "tslint": "tslint src/index.ts",
+    "lint": "tslint \"src/index.ts\"",
     "demo-test": "./bin/rev-static",
     "commonjs-test": "node tests/commonjs.js",
     "build": "tsc"
