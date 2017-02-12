@@ -1,6 +1,6 @@
 {
   "name": "rev-static",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
@@ -32,8 +32,6 @@
     "@types/glob": "5.0.30",
     "@types/minimist": "1.2.0",
     "@types/node": "7.0.4",
-    "lodash.flatten": "4.4.0",
-    "lodash.uniq": "4.5.0",
     "tslint": "4.4.2",
     "typescript": "2.1.5"
   },
@@ -41,6 +39,8 @@
     "camelcase": "4.0.0",
     "ejs": "2.5.5",
     "glob": "7.1.1",
+    "lodash.flatten": "4.4.0",
+    "lodash.uniq": "4.5.0",
     "minimist": "1.2.0"
   },
   "types": "./dist/index.d.ts",
