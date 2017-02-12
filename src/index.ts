@@ -5,9 +5,8 @@ import * as minimist from "minimist";
 import * as camelcase from "camelcase";
 import * as path from "path";
 import * as glob from "glob";
-import * as Promise from "bluebird";
-const flatten = require("lodash.flatten");
-const uniq = require("lodash.uniq");
+const flatten: <T>(array: T[][]) => T[] = require("lodash.flatten");
+const uniq: <T>(array: T[]) => T[] = require("lodash.uniq");
 const packageJson: { version: string } = require("../package.json");
 
 function md5(str: string): string {
@@ -22,7 +21,7 @@ function showToolVersion() {
     console.log(`Version: ${packageJson.version}`);
 }
 
-const defaultConfigName = "rev-static.config.json";
+const defaultConfigName = "rev-static.config.js";
 
 function showHelpInformation() {
     showToolVersion();
@@ -57,6 +56,53 @@ function globAsync(pattern: string) {
     });
 }
 
+function renderEjsAsync(path: string, data: ejs.Data, opts: ejs.Options) {
+    return new Promise<string>((resolve, reject) => {
+        ejs.renderFile(path, data, opts, (error, file) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(file!);
+            }
+        });
+    });
+}
+
+function writeFileAsync(filename: string, data: string) {
+    return new Promise<void>((resolve, reject) => {
+        fs.writeFile(filename, data, error => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+
+function getVariableName(filePath: string) {
+    return camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
+}
+
+export type CustomNewFileName = (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
+
+export interface Options {
+    customNewFileName?: CustomNewFileName;
+    shaType?: 256 | 384 | 512 | undefined;
+    noOutputFiles?: string[];
+}
+
+function getNewFileName(fileString: string, filePath: string, customNewFileName?: CustomNewFileName) {
+    const md5String = md5(fileString);
+    const extensionName = path.extname(filePath);
+    const baseName = path.basename(filePath, extensionName);
+    if (customNewFileName) {
+        return customNewFileName(filePath, fileString, md5String, baseName, extensionName);
+    } else {
+        return baseName + "-" + md5String + extensionName;
+    }
+}
+
 /**
  * calculate and return md5 version of all input files
  * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
@@ -64,48 +110,21 @@ function globAsync(pattern: string) {
  * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
  * `inputFiles` support glob
  */
-export function revisionCssJs(
-    inputFiles: string[],
-    options?: {
-        customNewFileName?: (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
-        delimiter?: string;
-        shaType?: 256 | 384 | 512 | undefined;
-    }): Promise<{ sri: { [name: string]: string } } & { [name: string]: string }> {
+export function revisionCssJs(inputFiles: string[], options?: Options) {
     const variables = ((options && options.shaType) ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
-    const delimiter = options && options.delimiter ? options.delimiter : "-";
-    return Promise.all(inputFiles.map(f => globAsync(f))).then(files => {
-        const allFiles = uniq(flatten(files));
-        for (const filePath of allFiles) {
-            const variableName = camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
-            const fileString = fs.readFileSync(filePath).toString();
-            const md5String = md5(fileString);
-            let newFileName: string;
-            const extensionName = path.extname(filePath);
-            const baseName = path.basename(filePath, extensionName);
-            if (options && options.customNewFileName) {
-                newFileName = options.customNewFileName(filePath, fileString, md5String, baseName, extensionName);
-            } else {
-                newFileName = baseName + delimiter + md5String + extensionName;
-            }
+    for (const filePath of inputFiles) {
+        const variableName = getVariableName(filePath);
+        const fileString = fs.readFileSync(filePath).toString();
+        const newFileName = getNewFileName(fileString, filePath, options ? options.customNewFileName : undefined);
+        if (options && options.noOutputFiles && options.noOutputFiles.indexOf(filePath) === -1) {
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
-            variables[variableName] = newFileName;
-            if (options && options.shaType) {
-                variables.sri[variableName] = `sha${options.shaType}-` + calculateSha(fileString, options.shaType);
-            }
         }
-        return variables;
-    });
-}
-
-function getOutputFiles(inputFiles: string[], outputFiles: string[] | ((file: string) => string)) {
-    if (typeof outputFiles === "function") {
-        return Promise.all(inputFiles.map(f => globAsync(f))).then(files => uniq(flatten(files)).map((f: string) => (outputFiles as (file: string) => string)(f)));
-    } else {
-        if (outputFiles.length !== inputFiles.length) {
-            return Promise.reject(`Error: input ${inputFiles.length} html files, but output ${outputFiles.length} html files.`);
+        variables[variableName] = newFileName;
+        if (options && options.shaType) {
+            variables.sri[variableName] = `sha${options.shaType}-` + calculateSha(fileString, options.shaType);
         }
-        return Promise.resolve(outputFiles);
     }
+    return variables;
 }
 
 /**
@@ -113,33 +132,18 @@ function getOutputFiles(inputFiles: string[], outputFiles: string[] | ((file: st
  * the `inputFiles` should be `ejs` templates, the variables will be `versions` from `revisionCssJs` function
  * the `inputFiles` and `outputFiles` should be one-to-one map, eg, input `["foo.ejs.html", "bar.ejs.html"]` and output `["foo.html", "bar.html"]`
  * the `ejsOptions` in `options` will be transfered to ejs
- * the `outputFiles` can be a function, in this case, `inputFiles` support glob
  */
-export function revisionHtml(inputFiles: string[], outputFiles: string[] | ((file: string) => string), newFileNames: { [name: string]: string }, options?: {
-    ejsOptions?: ejs.Options,
-}) {
-    getOutputFiles(inputFiles, outputFiles).then(finalOutputFiles => {
-        const ejsOptions = options && options.ejsOptions ? options.ejsOptions : {};
-        for (let i = 0; i < inputFiles.length; i++) {
-            ejs.renderFile(inputFiles[i], newFileNames, ejsOptions, (renderError: Error, file: any) => {
-                if (renderError) {
-                    console.log(renderError);
-                } else {
-                    fs.writeFile(finalOutputFiles[i], file, writeError => {
-                        if (writeError) {
-                            console.log(writeError);
-                        } else {
-                            console.log(`Success: to "${finalOutputFiles[i]}" from "${inputFiles[i]}".`);
-                        }
-                    });
-                }
-            });
-        }
-    }, error => {
-        console.log(error);
-        showHelpInformation();
-    });
+export async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], newFileNames: { [name: string]: string }, options?: { ejsOptions?: ejs.Options, customNewFileName?: CustomNewFileName }) {
+    const ejsOptions = options && options.ejsOptions ? options.ejsOptions : {};
+    for (let i = 0; i < htmlInputFiles.length; i++) {
+        const fileString = await renderEjsAsync(htmlInputFiles[i], newFileNames, ejsOptions);
+        await writeFileAsync(htmlOutputFiles[i], fileString);
+        console.log(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
 
+        const variableName = getVariableName(htmlOutputFiles[i]);
+        const newFileName = getNewFileName(fileString, htmlOutputFiles[i], options ? options.customNewFileName : undefined);
+        newFileNames[variableName] = newFileName;
+    }
 }
 
 export function executeCommandLine() {
@@ -167,14 +171,20 @@ export function executeCommandLine() {
 
     let configData: {
         inputFiles: string[];
-        outputFiles: string[];
+        outputFiles: string[] | ((file: string) => string);
         json?: boolean;
         ejsOptions?: ejs.Options;
         sha?: 256 | 384 | 512;
+        customNewFileName?: CustomNewFileName;
+        noOutputFiles?: string[];
     };
     try {
         configData = require(configPath);
+        if (configData && configData.noOutputFiles && configData.inputFiles) {
+            configData.inputFiles.push(...configData.noOutputFiles);
+        }
     } catch (error) {
+        console.log(error);
         const outFilesString: string = argv["o"] || argv["out"];
         if (typeof outFilesString !== "string") {
             console.log(`Error: invalid parameter: "-o".`);
@@ -213,34 +223,55 @@ export function executeCommandLine() {
     const htmlInputFiles: string[] = [];
     const jsCssInputFiles: string[] = [];
 
-    for (const file of configData.inputFiles) {
-        if (!fs.existsSync(file)) {
-            console.log(`Error: file: "${file}" not exists.`);
-            showHelpInformation();
-            return;
-        }
-        const extensionName = path.extname(file);
-        if ([".html", ".htm", "ejs"].indexOf(extensionName.toLowerCase()) !== -1) {
-            htmlInputFiles.push(file);
-        } else {
-            jsCssInputFiles.push(file);
-        }
-    }
-    revisionCssJs(jsCssInputFiles, { shaType: configData.sha }).then(newFileNames => {
-        console.log(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
-        if (configData.json === true) {
-            console.log(`Warn: expect path of json file.`);
-        } else if (typeof configData.json === "string") {
-            fs.writeFile(configData.json, JSON.stringify(newFileNames, null, "  "), error => {
-                if (error) {
-                    console.log(error);
-                } else {
-                    console.log(`Success: to "${configData.json}".`);
-                }
-            });
+    Promise.all(configData.inputFiles.map(file => globAsync(file))).then(files => {
+        const uniqFiles = uniq(flatten(files));
+
+        for (const file of uniqFiles) {
+            if (!fs.existsSync(file)) {
+                console.log(`Error: file: "${file}" not exists.`);
+                showHelpInformation();
+                return;
+            }
+            const extensionName = path.extname(file);
+            if ([".html", ".htm", ".ejs"].indexOf(extensionName.toLowerCase()) !== -1) {
+                htmlInputFiles.push(file);
+            } else {
+                jsCssInputFiles.push(file);
+            }
         }
 
-        revisionHtml(htmlInputFiles, configData.outputFiles, newFileNames, { ejsOptions: configData.ejsOptions });
+        let htmlOutputFiles: string[];
+        if (typeof configData.outputFiles === "function") {
+            htmlOutputFiles = htmlInputFiles.map(file => (configData.outputFiles as (file: string) => string)(file));
+        } else {
+            if (configData.outputFiles.length !== htmlInputFiles.length) {
+                console.log(`Error: input ${htmlInputFiles.length} html files, but output ${configData.outputFiles.length} html files.`);
+                showHelpInformation();
+                return;
+            }
+            htmlOutputFiles = configData.outputFiles;
+        }
+
+        const newFileNames = revisionCssJs(jsCssInputFiles, {
+            shaType: configData.sha,
+            customNewFileName: configData.customNewFileName,
+            noOutputFiles: configData.noOutputFiles,
+        });
+
+        revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: configData.ejsOptions, customNewFileName: configData.customNewFileName }).then(() => {
+            console.log(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
+            if (configData.json === true) {
+                console.log(`Warn: expect path of json file.`);
+            } else if (typeof configData.json === "string") {
+                fs.writeFile(configData.json, JSON.stringify(newFileNames, null, "  "), error => {
+                    if (error) {
+                        console.log(error);
+                    } else {
+                        console.log(`Success: to "${configData.json}".`);
+                    }
+                });
+            }
+        });
     }, (error: Error) => {
         console.log(error);
         showHelpInformation();

@@ -1,6 +1,6 @@
 {
   "name": "rev-static",
-  "version": "1.3.1",
+  "version": "2.0.0",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
@@ -27,7 +27,6 @@
   },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
-    "@types/bluebird": "3.0.37",
     "@types/camelcase": "0.0.30",
     "@types/ejs": "2.3.33",
     "@types/glob": "5.0.30",
@@ -39,7 +38,6 @@
     "typescript": "2.1.5"
   },
   "dependencies": {
-    "bluebird": "3.4.7",
     "camelcase": "4.0.0",
     "ejs": "2.5.5",
     "glob": "7.1.1",
@@ -48,5 +46,8 @@
   "types": "./dist/index.d.ts",
   "bin": {
     "rev-static": "./bin/rev-static"
+  },
+  "engines": {
+    "node": ">=4"
   }
 }

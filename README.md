@@ -43,7 +43,7 @@ Options:
   -v, --version        print the tool's version.
   -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.
   --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.
-  --config [file]      set the configuration file path, the default configuration file path is 'rev-static.config.json'.
+  --config [file]      set the configuration file path, the default configuration file path is 'rev-static.config.js'.
 ```
 
 ## usage from nodejs
@@ -57,3 +57,23 @@ rev.revisionCssJs(["foo.js", "bar.css"]).then(variables => {
 ## develop
 
 check `scripts` part in `package.json` file, then run `npm run [a script name]`.
+
+## change logs
+
+#### v2
+
+```js
+// before
+// default configuration file path: rev-static.config.json
+
+// after
+// default configuration file path: rev-static.config.js
+```
+
+```js
+// before
+rev.revisionCssJs(["demo/foo.js", "demo/bar.css"], { shaType: 256 }).then(variables => { });
+
+// after
+const variables = rev.revisionCssJs(["demo/foo.js", "demo/bar.css"], { shaType: 256 });
+```
