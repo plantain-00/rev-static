@@ -36,6 +36,7 @@ Examples:
    rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace
    rev-static *.js bar.ejs.html -o bar.html
    rev-static --config rev-static.debug.json
+   rev-static init
 Options:
   -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.
   -h, --help           print this message.

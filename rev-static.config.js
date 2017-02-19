@@ -14,4 +14,4 @@ module.exports = {
     noOutputFiles: [
         "demo/worker.js",
     ],
-}
+};

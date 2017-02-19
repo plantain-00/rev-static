@@ -23,6 +23,25 @@ function showToolVersion() {
 
 const defaultConfigName = "rev-static.config.js";
 
+const defaultConfigContent = `module.exports = {
+    inputFiles: [
+        "demo/foo.js",
+        "demo/bar.css",
+        "demo/*.ejs.html",
+    ],
+    outputFiles: file => file.replace(".ejs", ""),
+    json: false,
+    ejsOptions: {
+        rmWhitespace: true
+    },
+    sha: 256,
+    customNewFileName: (filePath, fileString, md5String, baseName, extensionName) => baseName + "-" + md5String + extensionName,
+    noOutputFiles: [
+        "demo/worker.js",
+    ],
+};
+`;
+
 function showHelpInformation() {
     showToolVersion();
     console.log("Syntax:            rev-static [options] [file ...]");
@@ -34,6 +53,7 @@ function showHelpInformation() {
     console.log("   rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
     console.log("   rev-static *.js bar.ejs.html -o bar.html");
     console.log("   rev-static --config rev-static.debug.json");
+    console.log("   rev-static init");
     console.log("Options:");
     console.log("  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.");
     console.log("  -h, --help           print this message.");
@@ -163,6 +183,16 @@ export function executeCommandLine() {
         return;
     }
 
+    const inputFiles = argv["_"];
+    if (inputFiles.some(f => f === "init")) {
+        writeFileAsync(defaultConfigName, defaultConfigContent).then(() => {
+            console.log(`Success: to "${defaultConfigName}".`);
+        }, error => {
+            console.log(error);
+        });
+        return;
+    }
+
     let config: string | undefined = argv["config"];
     if (!config) {
         config = defaultConfigName;
@@ -172,7 +202,7 @@ export function executeCommandLine() {
     let configData: {
         inputFiles: string[];
         outputFiles: string[] | ((file: string) => string);
-        json?: boolean;
+        json?: boolean | string;
         ejsOptions?: ejs.Options;
         sha?: 256 | 384 | 512;
         customNewFileName?: CustomNewFileName;
@@ -200,7 +230,7 @@ export function executeCommandLine() {
             }
         }
         configData = {
-            inputFiles: argv["_"],
+            inputFiles,
             outputFiles: outFilesString.split(","),
             json: argv["j"] || argv["json"],
             sha: shaType,
@@ -263,12 +293,10 @@ export function executeCommandLine() {
             if (configData.json === true) {
                 console.log(`Warn: expect path of json file.`);
             } else if (typeof configData.json === "string") {
-                fs.writeFile(configData.json, JSON.stringify(newFileNames, null, "  "), error => {
-                    if (error) {
-                        console.log(error);
-                    } else {
-                        console.log(`Success: to "${configData.json}".`);
-                    }
+                writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
+                    console.log(`Success: to "${configData.json}".`);
+                }, error => {
+                    console.log(error);
                 });
             }
         });
