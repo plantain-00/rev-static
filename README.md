@@ -22,7 +22,7 @@
 
 1. download or clone this repository
 2. run `rev-static demo/foo.js demo/bar.css demo/baz.ejs.html demo/qux.ejs.html -o demo/baz.html,demo/qux.html --sha 256`
-3. or just run `rev-static`(the options is already in `rev-static.config.json`)
+3. or just run `rev-static`(the options is already in `rev-static.config.js`)
 
 ## cli help
 
@@ -35,7 +35,7 @@ Examples:
    rev-static foo.js bar.css -j version.json
    rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace
    rev-static *.js bar.ejs.html -o bar.html
-   rev-static --config rev-static.debug.json
+   rev-static --config rev-static.debug.js
    rev-static init
 Options:
   -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.

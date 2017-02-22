@@ -52,7 +52,7 @@ function showHelpInformation() {
     console.log("   rev-static foo.js bar.css -j version.json");
     console.log("   rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
     console.log("   rev-static *.js bar.ejs.html -o bar.html");
-    console.log("   rev-static --config rev-static.debug.json");
+    console.log("   rev-static --config rev-static.debug.js");
     console.log("   rev-static init");
     console.log("Options:");
     console.log("  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.");
