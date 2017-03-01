@@ -31,13 +31,13 @@
     "@types/ejs": "2.3.33",
     "@types/glob": "5.0.30",
     "@types/minimist": "1.2.0",
-    "@types/node": "7.0.4",
-    "tslint": "4.4.2",
-    "typescript": "2.1.5"
+    "@types/node": "7.0.5",
+    "tslint": "4.5.1",
+    "typescript": "2.2.1"
   },
   "dependencies": {
     "camelcase": "4.0.0",
-    "ejs": "2.5.5",
+    "ejs": "2.5.6",
     "glob": "7.1.1",
     "lodash.flatten": "4.4.0",
     "lodash.uniq": "4.5.0",
