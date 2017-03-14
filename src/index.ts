@@ -136,7 +136,7 @@ export function revisionCssJs(inputFiles: string[], options?: Options) {
         const variableName = getVariableName(filePath);
         const fileString = fs.readFileSync(filePath).toString();
         const newFileName = getNewFileName(fileString, filePath, options ? options.customNewFileName : undefined);
-        if (options && options.noOutputFiles && options.noOutputFiles.indexOf(filePath) === -1) {
+        if (!options || !options.noOutputFiles || options.noOutputFiles.indexOf(filePath) === -1) {
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
         }
         variables[variableName] = newFileName;
