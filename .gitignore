@@ -46,3 +46,5 @@ baz.ejs2.html
 dist/
 variables.json
 variables.ts
+variables.less
+variables.scss

@@ -65,6 +65,8 @@ function showHelpInformation() {
     console.log("  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.");
     console.log(`  --config [file]      set the configuration file path, the default configuration file path is '${defaultConfigName}'.`);
     console.log("  --e, --es6 [file]    output the variables in a es6 file.");
+    console.log("  --l, --less [file]   output the variables in a less file.");
+    console.log("  --s, --scss [file]   output the variables in a scss file.");
 }
 
 function globAsync(pattern: string) {
@@ -174,19 +176,19 @@ export function executeCommandLine() {
         "--": true,
     });
 
-    const showHelp = argv["h"] || argv["help"];
+    const showHelp = argv.h || argv.help;
     if (showHelp) {
         showHelpInformation();
         return;
     }
 
-    const showVersion = argv["v"] || argv["version"];
+    const showVersion = argv.v || argv.version;
     if (showVersion) {
         showToolVersion();
         return;
     }
 
-    const inputFiles = argv["_"];
+    const inputFiles = argv._;
     if (inputFiles.some(f => f === "init")) {
         writeFileAsync(defaultConfigName, defaultConfigContent).then(() => {
             console.log(`Success: to "${defaultConfigName}".`);
@@ -196,7 +198,7 @@ export function executeCommandLine() {
         return;
     }
 
-    let config: string | undefined = argv["config"];
+    let config: string | undefined = argv.config;
     if (!config) {
         config = defaultConfigName;
     }
@@ -211,6 +213,8 @@ export function executeCommandLine() {
         customNewFileName?: CustomNewFileName;
         noOutputFiles?: string[];
         es6?: boolean | string;
+        less?: boolean | string;
+        scss?: boolean | string;
     };
     try {
         configData = require(configPath);
@@ -219,13 +223,13 @@ export function executeCommandLine() {
         }
     } catch (error) {
         console.log(error);
-        const outFilesString: string = argv["o"] || argv["out"];
+        const outFilesString: string = argv.o || argv.out;
         if (typeof outFilesString !== "string") {
             console.log(`Error: invalid parameter: "-o".`);
             showHelpInformation();
             return;
         }
-        const shaType: 256 | 384 | 512 | undefined = argv["sha"];
+        const shaType: 256 | 384 | 512 | undefined = argv.sha;
         if (shaType && [256, 384, 512].indexOf(shaType) === -1) {
             console.log("Error: invalid parameter `sha`.");
             showHelpInformation();
@@ -234,8 +238,11 @@ export function executeCommandLine() {
         configData = {
             inputFiles,
             outputFiles: outFilesString.split(","),
-            json: argv["j"] || argv["json"],
+            json: argv.j || argv.json,
             sha: shaType,
+            es6: argv.e || argv.es6,
+            less: argv.l || argv.less,
+            scss: argv.s || argv.scss,
         };
         if (argv["--"]) {
             const ejsArgv = minimist(argv["--"]);
@@ -304,18 +311,51 @@ export function executeCommandLine() {
             }
 
             if (configData.es6 === true) {
-                console.log(`Warn: expect path of typescript file.`);
+                console.log(`Warn: expect path of es6 file.`);
             } else if (typeof configData.es6 === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
-                    if (key === "sri") {
-                        continue;
+                    if (key !== "sri") {
+                        variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
                     }
-                    variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
                 }
 
                 writeFileAsync(configData.es6, variables.join("")).then(() => {
                     console.log(`Success: to "${configData.es6}".`);
+                }, error => {
+                    console.log(error);
+                });
+            }
+
+            if (configData.less === true) {
+                console.log(`Warn: expect path of less file.`);
+            } else if (typeof configData.less === "string") {
+                const variables: string[] = [];
+                for (const key in newFileNames) {
+                    if (key !== "sri") {
+                        variables.push(`@${key}: '${newFileNames[key]}';\n`);
+                    }
+                }
+
+                writeFileAsync(configData.less, variables.join("")).then(() => {
+                    console.log(`Success: to "${configData.less}".`);
+                }, error => {
+                    console.log(error);
+                });
+            }
+
+            if (configData.scss === true) {
+                console.log(`Warn: expect path of scss file.`);
+            } else if (typeof configData.scss === "string") {
+                const variables: string[] = [];
+                for (const key in newFileNames) {
+                    if (key !== "sri") {
+                        variables.push(`$${key}: '${newFileNames[key]}';\n`);
+                    }
+                }
+
+                writeFileAsync(configData.scss, variables.join("")).then(() => {
+                    console.log(`Success: to "${configData.scss}".`);
                 }, error => {
                     console.log(error);
                 });

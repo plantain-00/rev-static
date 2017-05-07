@@ -16,4 +16,6 @@ module.exports = {
         "demo/worker.js",
     ],
     es6: "demo/variables.ts",
+    less: "demo/variables.less",
+    scss: "demo/variables.scss",
 };
