@@ -23,6 +23,8 @@ function showToolVersion() {
 
 const defaultConfigName = "rev-static.config.js";
 
+const htmlExtensions = [".html", ".htm", ".ejs"];
+
 const defaultConfigContent = `module.exports = {
     inputFiles: [
         "demo/foo.js",
@@ -261,7 +263,7 @@ export function executeCommandLine() {
                 return;
             }
             const extensionName = path.extname(file);
-            if ([".html", ".htm", ".ejs"].indexOf(extensionName.toLowerCase()) !== -1) {
+            if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
                 htmlInputFiles.push(file);
             } else {
                 jsCssInputFiles.push(file);
