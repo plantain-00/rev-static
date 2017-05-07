@@ -2,6 +2,7 @@ module.exports = {
     inputFiles: [
         "demo/foo.js",
         "demo/bar.css",
+        "demo/test.png",
         "demo/*.ejs.html",
     ],
     outputFiles: file => file.replace(".ejs", ""),

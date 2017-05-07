@@ -222,12 +222,10 @@ export function executeCommandLine() {
             return;
         }
         const shaType: 256 | 384 | 512 | undefined = argv["sha"];
-        if (shaType) {
-            if ([256, 384, 512].indexOf(shaType) === -1) {
-                console.log("Error: invalid parameter `sha`.");
-                showHelpInformation();
-                return;
-            }
+        if (shaType && [256, 384, 512].indexOf(shaType) === -1) {
+            console.log("Error: invalid parameter `sha`.");
+            showHelpInformation();
+            return;
         }
         configData = {
             inputFiles,
