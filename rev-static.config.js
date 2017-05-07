@@ -6,7 +6,7 @@ module.exports = {
         "demo/*.ejs.html",
     ],
     outputFiles: file => file.replace(".ejs", ""),
-    json: false,
+    json: "demo/variables.json",
     ejsOptions: {
         rmWhitespace: true
     },
@@ -15,4 +15,5 @@ module.exports = {
     noOutputFiles: [
         "demo/worker.js",
     ],
+    es6: "demo/variables.ts",
 };

@@ -74,6 +74,7 @@ Options:
   -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.
   --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.
   --config [file]      set the configuration file path, the default configuration file path is 'rev-static.config.js'.
+  --e, --es6 [file]    output the variables in a es6 file.
 ```
 
 ## usage from nodejs

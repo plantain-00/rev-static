@@ -44,3 +44,5 @@ qux.html
 qux.ejs2.html
 baz.ejs2.html
 dist/
+variables.json
+variables.ts

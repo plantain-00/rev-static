@@ -64,6 +64,7 @@ function showHelpInformation() {
     console.log("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
     console.log("  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.");
     console.log(`  --config [file]      set the configuration file path, the default configuration file path is '${defaultConfigName}'.`);
+    console.log("  --e, --es6 [file]    output the variables in a es6 file.");
 }
 
 function globAsync(pattern: string) {
@@ -209,6 +210,7 @@ export function executeCommandLine() {
         sha?: 256 | 384 | 512;
         customNewFileName?: CustomNewFileName;
         noOutputFiles?: string[];
+        es6?: boolean | string;
     };
     try {
         configData = require(configPath);
@@ -290,11 +292,30 @@ export function executeCommandLine() {
 
         revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: configData.ejsOptions, customNewFileName: configData.customNewFileName }).then(() => {
             console.log(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
+
             if (configData.json === true) {
                 console.log(`Warn: expect path of json file.`);
             } else if (typeof configData.json === "string") {
                 writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
                     console.log(`Success: to "${configData.json}".`);
+                }, error => {
+                    console.log(error);
+                });
+            }
+
+            if (configData.es6 === true) {
+                console.log(`Warn: expect path of typescript file.`);
+            } else if (typeof configData.es6 === "string") {
+                const variables: string[] = [];
+                for (const key in newFileNames) {
+                    if (key === "sri") {
+                        continue;
+                    }
+                    variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
+                }
+
+                writeFileAsync(configData.es6, variables.join("")).then(() => {
+                    console.log(`Success: to "${configData.es6}".`);
                 }, error => {
                     console.log(error);
                 });
