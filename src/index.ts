@@ -323,7 +323,7 @@ export function executeCommandLine() {
             } else if (typeof configData.es6 === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
-                    if (key !== "sri") {
+                    if (key !== "sri" && !key.endsWith("Js")) {
                         variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
                     }
                 }
@@ -340,7 +340,7 @@ export function executeCommandLine() {
             } else if (typeof configData.less === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
-                    if (key !== "sri") {
+                    if (key !== "sri" && !key.endsWith("Css")) {
                         variables.push(`@${key}: '${newFileNames[key]}';\n`);
                     }
                 }
@@ -357,7 +357,7 @@ export function executeCommandLine() {
             } else if (typeof configData.scss === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
-                    if (key !== "sri") {
+                    if (key !== "sri" && !key.endsWith("Css")) {
                         variables.push(`$${key}: '${newFileNames[key]}';\n`);
                     }
                 }
