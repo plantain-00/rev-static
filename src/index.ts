@@ -178,6 +178,10 @@ export async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: st
     }
 }
 
+function isImage(key: string) {
+    return key !== "sri" && !key.endsWith("Js") && !key.endsWith("Html") && !key.endsWith("Css");
+}
+
 export function executeCommandLine() {
     const argv = minimist(process.argv.slice(2), {
         "--": true,
@@ -323,7 +327,7 @@ export function executeCommandLine() {
             } else if (typeof configData.es6 === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
-                    if (key !== "sri" && !key.endsWith("Js")) {
+                    if (isImage(key)) {
                         variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
                     }
                 }
@@ -340,7 +344,7 @@ export function executeCommandLine() {
             } else if (typeof configData.less === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
-                    if (key !== "sri" && !key.endsWith("Css")) {
+                    if (isImage(key)) {
                         variables.push(`@${key}: '${newFileNames[key]}';\n`);
                     }
                 }
@@ -357,7 +361,7 @@ export function executeCommandLine() {
             } else if (typeof configData.scss === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
-                    if (key !== "sri" && !key.endsWith("Css")) {
+                    if (isImage(key)) {
                         variables.push(`$${key}: '${newFileNames[key]}';\n`);
                     }
                 }
