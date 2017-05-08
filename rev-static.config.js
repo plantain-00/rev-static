@@ -1,9 +1,12 @@
 module.exports = {
     inputFiles: [
-        "demo/foo.js",
-        "demo/bar.css",
-        "demo/test.png",
+        "demo/*.js",
+        "demo/*.css",
+        "demo/*.png",
         "demo/*.ejs.html",
+    ],
+    excludeFiles: [
+        "demo/*-*.*",
     ],
     outputFiles: file => file.replace(".ejs", ""),
     json: "demo/variables.json",

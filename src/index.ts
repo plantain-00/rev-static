@@ -27,12 +27,16 @@ const htmlExtensions = [".html", ".htm", ".ejs"];
 
 const defaultConfigContent = `module.exports = {
     inputFiles: [
-        "demo/foo.js",
-        "demo/bar.css",
+        "demo/*.js",
+        "demo/*.css",
+        "demo/*.png",
         "demo/*.ejs.html",
     ],
+    excludeFiles: [
+        "demo/*-*.*",
+    ],
     outputFiles: file => file.replace(".ejs", ""),
-    json: false,
+    json: "demo/variables.json",
     ejsOptions: {
         rmWhitespace: true
     },
@@ -41,6 +45,9 @@ const defaultConfigContent = `module.exports = {
     noOutputFiles: [
         "demo/worker.js",
     ],
+    es6: "demo/variables.ts",
+    less: "demo/variables.less",
+    scss: "demo/variables.scss",
 };
 `;
 
@@ -69,9 +76,9 @@ function showHelpInformation() {
     console.log("  --s, --scss [file]   output the variables in a scss file.");
 }
 
-function globAsync(pattern: string) {
+function globAsync(pattern: string, ignore: string[]) {
     return new Promise<string[]>((resolve, reject) => {
-        glob(pattern, (error, matches) => {
+        glob(pattern, { ignore }, (error, matches) => {
             if (error) {
                 reject(error);
             } else {
@@ -206,6 +213,7 @@ export function executeCommandLine() {
 
     let configData: {
         inputFiles: string[];
+        excludeFiles: string[];
         outputFiles: string[] | ((file: string) => string);
         json?: boolean | string;
         ejsOptions?: ejs.Options;
@@ -237,6 +245,7 @@ export function executeCommandLine() {
         }
         configData = {
             inputFiles,
+            excludeFiles: [],
             outputFiles: outFilesString.split(","),
             json: argv.j || argv.json,
             sha: shaType,
@@ -262,7 +271,7 @@ export function executeCommandLine() {
     const htmlInputFiles: string[] = [];
     const jsCssInputFiles: string[] = [];
 
-    Promise.all(configData.inputFiles.map(file => globAsync(file))).then(files => {
+    Promise.all(configData.inputFiles.map(file => globAsync(file, configData.excludeFiles))).then(files => {
         const uniqFiles = uniq(flatten(files));
 
         for (const file of uniqFiles) {
@@ -296,10 +305,9 @@ export function executeCommandLine() {
             customNewFileName: configData.customNewFileName,
             noOutputFiles: configData.noOutputFiles,
         });
+        console.log(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
 
         revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: configData.ejsOptions, customNewFileName: configData.customNewFileName }).then(() => {
-            console.log(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
-
             if (configData.json === true) {
                 console.log(`Warn: expect path of json file.`);
             } else if (typeof configData.json === "string") {
