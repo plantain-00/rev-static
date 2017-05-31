@@ -31,19 +31,19 @@
     "@types/ejs": "2.3.33",
     "@types/glob": "5.0.30",
     "@types/minimist": "1.2.0",
-    "@types/node": "7.0.14",
+    "@types/node": "7.0.22",
     "rimraf": "2.6.1",
-    "tslint": "5.1.0",
-    "typescript": "2.3.2"
+    "tslint": "5.4.0",
+    "typescript": "2.3.4"
   },
   "dependencies": {
     "camelcase": "4.1.0",
     "ejs": "2.5.6",
-    "glob": "7.1.1",
+    "glob": "7.1.2",
     "lodash.flatten": "4.4.0",
     "lodash.uniq": "4.5.0",
     "minimist": "1.2.0",
-    "tslib": "1.6.1"
+    "tslib": "1.7.1"
   },
   "types": "./dist/index.d.ts",
   "bin": {
