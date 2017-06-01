@@ -19,7 +19,7 @@ function calculateSha(str: string, shaType: 256 | 384 | 512): string {
     return crypto.createHash(`sha${shaType}`).update(str).digest("base64");
 }
 
-function print(message: string) {
+function print(message: any) {
     // tslint:disable-next-line:no-console
     console.log(message);
 }
