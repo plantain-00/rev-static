@@ -5,9 +5,11 @@ import * as minimist from "minimist";
 import * as camelcase from "camelcase";
 import * as path from "path";
 import * as glob from "glob";
+// tslint:disable:no-var-requires
 const flatten: <T>(array: T[][]) => T[] = require("lodash.flatten");
 const uniq: <T>(array: T[]) => T[] = require("lodash.uniq");
 const packageJson: { version: string } = require("../package.json");
+// tslint:enable:no-var-requires
 
 function md5(str: string): string {
     return crypto.createHash("md5").update(str).digest("hex");
@@ -17,8 +19,13 @@ function calculateSha(str: string, shaType: 256 | 384 | 512): string {
     return crypto.createHash(`sha${shaType}`).update(str).digest("base64");
 }
 
+function print(message: string) {
+    // tslint:disable-next-line:no-console
+    console.log(message);
+}
+
 function showToolVersion() {
-    console.log(`Version: ${packageJson.version}`);
+    print(`Version: ${packageJson.version}`);
 }
 
 const defaultConfigName = "rev-static.config.js";
@@ -53,27 +60,27 @@ const defaultConfigContent = `module.exports = {
 
 function showHelpInformation() {
     showToolVersion();
-    console.log("Syntax:            rev-static [options] [file ...]");
-    console.log("Examples:");
-    console.log("   rev-static foo.js bar.ejs.html -o bar.html");
-    console.log("   rev-static foo.js bar.css baz.ejs.html -o baz.html");
-    console.log("   rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html");
-    console.log("   rev-static foo.js bar.css -j version.json");
-    console.log("   rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
-    console.log("   rev-static *.js bar.ejs.html -o bar.html");
-    console.log("   rev-static --config rev-static.debug.js");
-    console.log("   rev-static init");
-    console.log("Options:");
-    console.log("  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.");
-    console.log("  -h, --help           print this message.");
-    console.log("  -j, --json [file]    output the variables in a json file, can be used by back-end templates.");
-    console.log("  -v, --version        print the tool's version.");
-    console.log("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
-    console.log("  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.");
-    console.log(`  --config [file]      set the configuration file path, the default configuration file path is '${defaultConfigName}'.`);
-    console.log("  --e, --es6 [file]    output the variables in a es6 file.");
-    console.log("  --l, --less [file]   output the variables in a less file.");
-    console.log("  --s, --scss [file]   output the variables in a scss file.");
+    print("Syntax:            rev-static [options] [file ...]");
+    print("Examples:");
+    print("   rev-static foo.js bar.ejs.html -o bar.html");
+    print("   rev-static foo.js bar.css baz.ejs.html -o baz.html");
+    print("   rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html");
+    print("   rev-static foo.js bar.css -j version.json");
+    print("   rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace");
+    print("   rev-static *.js bar.ejs.html -o bar.html");
+    print("   rev-static --config rev-static.debug.js");
+    print("   rev-static init");
+    print("Options:");
+    print("  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.");
+    print("  -h, --help           print this message.");
+    print("  -j, --json [file]    output the variables in a json file, can be used by back-end templates.");
+    print("  -v, --version        print the tool's version.");
+    print("  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.");
+    print("  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.");
+    print(`  --config [file]      set the configuration file path, the default configuration file path is '${defaultConfigName}'.`);
+    print("  --e, --es6 [file]    output the variables in a es6 file.");
+    print("  --l, --less [file]   output the variables in a less file.");
+    print("  --s, --scss [file]   output the variables in a scss file.");
 }
 
 function globAsync(pattern: string, ignore: string[]) {
@@ -118,11 +125,11 @@ function getVariableName(filePath: string) {
 
 export type CustomNewFileName = (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
 
-export interface Options {
+export type Options = {
     customNewFileName?: CustomNewFileName;
     shaType?: 256 | 384 | 512 | undefined;
     noOutputFiles?: string[];
-}
+};
 
 function getNewFileName(fileString: string, filePath: string, customNewFileName?: CustomNewFileName) {
     const md5String = md5(fileString);
@@ -170,7 +177,7 @@ export async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: st
     for (let i = 0; i < htmlInputFiles.length; i++) {
         const fileString = await renderEjsAsync(htmlInputFiles[i], newFileNames, ejsOptions);
         await writeFileAsync(htmlOutputFiles[i], fileString);
-        console.log(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
+        print(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
 
         const variableName = getVariableName(htmlOutputFiles[i]);
         const newFileName = getNewFileName(fileString, htmlOutputFiles[i], options ? options.customNewFileName : undefined);
@@ -202,9 +209,9 @@ export function executeCommandLine() {
     const inputFiles = argv._;
     if (inputFiles.some(f => f === "init")) {
         writeFileAsync(defaultConfigName, defaultConfigContent).then(() => {
-            console.log(`Success: to "${defaultConfigName}".`);
+            print(`Success: to "${defaultConfigName}".`);
         }, error => {
-            console.log(error);
+            print(error);
         });
         return;
     }
@@ -234,16 +241,16 @@ export function executeCommandLine() {
             configData.inputFiles.push(...configData.noOutputFiles);
         }
     } catch (error) {
-        console.log(error);
+        print(error);
         const outFilesString: string = argv.o || argv.out;
         if (typeof outFilesString !== "string") {
-            console.log(`Error: invalid parameter: "-o".`);
+            print(`Error: invalid parameter: "-o".`);
             showHelpInformation();
             return;
         }
         const shaType: 256 | 384 | 512 | undefined = argv.sha;
         if (shaType && [256, 384, 512].indexOf(shaType) === -1) {
-            console.log("Error: invalid parameter `sha`.");
+            print("Error: invalid parameter `sha`.");
             showHelpInformation();
             return;
         }
@@ -267,7 +274,7 @@ export function executeCommandLine() {
     }
 
     if (!configData.inputFiles || configData.inputFiles.length === 0) {
-        console.log("Error: no input files.");
+        print("Error: no input files.");
         showHelpInformation();
         return;
     }
@@ -280,7 +287,7 @@ export function executeCommandLine() {
 
         for (const file of uniqFiles) {
             if (!fs.existsSync(file)) {
-                console.log(`Error: file: "${file}" not exists.`);
+                print(`Error: file: "${file}" not exists.`);
                 showHelpInformation();
                 return;
             }
@@ -297,7 +304,7 @@ export function executeCommandLine() {
             htmlOutputFiles = htmlInputFiles.map(file => (configData.outputFiles as (file: string) => string)(file));
         } else {
             if (configData.outputFiles.length !== htmlInputFiles.length) {
-                console.log(`Error: input ${htmlInputFiles.length} html files, but output ${configData.outputFiles.length} html files.`);
+                print(`Error: input ${htmlInputFiles.length} html files, but output ${configData.outputFiles.length} html files.`);
                 showHelpInformation();
                 return;
             }
@@ -309,21 +316,21 @@ export function executeCommandLine() {
             customNewFileName: configData.customNewFileName,
             noOutputFiles: configData.noOutputFiles,
         });
-        console.log(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
+        print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
 
         revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: configData.ejsOptions, customNewFileName: configData.customNewFileName }).then(() => {
             if (configData.json === true) {
-                console.log(`Warn: expect path of json file.`);
+                print(`Warn: expect path of json file.`);
             } else if (typeof configData.json === "string") {
                 writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
-                    console.log(`Success: to "${configData.json}".`);
+                    print(`Success: to "${configData.json}".`);
                 }, error => {
-                    console.log(error);
+                    print(error);
                 });
             }
 
             if (configData.es6 === true) {
-                console.log(`Warn: expect path of es6 file.`);
+                print(`Warn: expect path of es6 file.`);
             } else if (typeof configData.es6 === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
@@ -333,14 +340,14 @@ export function executeCommandLine() {
                 }
 
                 writeFileAsync(configData.es6, variables.join("")).then(() => {
-                    console.log(`Success: to "${configData.es6}".`);
+                    print(`Success: to "${configData.es6}".`);
                 }, error => {
-                    console.log(error);
+                    print(error);
                 });
             }
 
             if (configData.less === true) {
-                console.log(`Warn: expect path of less file.`);
+                print(`Warn: expect path of less file.`);
             } else if (typeof configData.less === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
@@ -350,14 +357,14 @@ export function executeCommandLine() {
                 }
 
                 writeFileAsync(configData.less, variables.join("")).then(() => {
-                    console.log(`Success: to "${configData.less}".`);
+                    print(`Success: to "${configData.less}".`);
                 }, error => {
-                    console.log(error);
+                    print(error);
                 });
             }
 
             if (configData.scss === true) {
-                console.log(`Warn: expect path of scss file.`);
+                print(`Warn: expect path of scss file.`);
             } else if (typeof configData.scss === "string") {
                 const variables: string[] = [];
                 for (const key in newFileNames) {
@@ -367,14 +374,14 @@ export function executeCommandLine() {
                 }
 
                 writeFileAsync(configData.scss, variables.join("")).then(() => {
-                    console.log(`Success: to "${configData.scss}".`);
+                    print(`Success: to "${configData.scss}".`);
                 }, error => {
-                    console.log(error);
+                    print(error);
                 });
             }
         });
     }, (error: Error) => {
-        console.log(error);
+        print(error);
         showHelpInformation();
     });
 }
