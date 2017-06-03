@@ -42,8 +42,7 @@
     "glob": "7.1.2",
     "lodash.flatten": "4.4.0",
     "lodash.uniq": "4.5.0",
-    "minimist": "1.2.0",
-    "tslib": "1.7.1"
+    "minimist": "1.2.0"
   },
   "types": "./dist/index.d.ts",
   "bin": {
