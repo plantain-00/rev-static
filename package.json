@@ -31,7 +31,6 @@
     "@types/ejs": "2.3.33",
     "@types/glob": "5.0.30",
     "@types/minimist": "1.2.0",
-    "@types/node": "7.0.22",
     "rimraf": "2.6.1",
     "tslint": "5.4.0",
     "typescript": "2.3.4"

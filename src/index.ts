@@ -5,11 +5,9 @@ import * as minimist from "minimist";
 import * as camelcase from "camelcase";
 import * as path from "path";
 import * as glob from "glob";
-// tslint:disable:no-var-requires
-const flatten: <T>(array: T[][]) => T[] = require("lodash.flatten");
-const uniq: <T>(array: T[]) => T[] = require("lodash.uniq");
-const packageJson: { version: string } = require("../package.json");
-// tslint:enable:no-var-requires
+import flatten = require("lodash.flatten");
+import uniq = require("lodash.uniq");
+import * as packageJson from "../package.json";
 
 function md5(str: string): string {
     return crypto.createHash("md5").update(str).digest("hex");
