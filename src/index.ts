@@ -265,7 +265,7 @@ export function executeCommandLine() {
         if (argv["--"]) {
             const ejsArgv = minimist(argv["--"]);
             delete ejsArgv._;
-            configData.ejsOptions = ejsArgv;
+            configData.ejsOptions = ejsArgv as any;
         } else {
             configData.ejsOptions = {};
         }
