@@ -5,8 +5,8 @@ import * as minimist from "minimist";
 import * as camelcase from "camelcase";
 import * as path from "path";
 import * as glob from "glob";
-import flatten = require("lodash.flatten");
-import uniq = require("lodash.uniq");
+import * as flatten from "lodash.flatten";
+import * as uniq from "lodash.uniq";
 import * as packageJson from "../package.json";
 
 function md5(str: string): string {
