@@ -4,10 +4,12 @@
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
-    "lint": "tslint \"src/index.ts\"",
+    "lint": "tslint \"src/index.ts\" && npm run standard",
     "demo-test": "./bin/rev-static",
     "commonjs-test": "node tests/commonjs.js",
-    "build": "rimraf dist && tsc -p src"
+    "build": "rimraf dist && tsc -p src",
+    "standard": "standard \"**/*.config.js\"",
+    "fix": "standard --fix \"**/*.config.js\""
   },
   "repository": {
     "type": "git",
@@ -32,6 +34,7 @@
     "@types/glob": "5.0.30",
     "@types/minimist": "1.2.0",
     "rimraf": "2.6.1",
+    "standard": "10.0.2",
     "tslint": "5.4.0",
     "typescript": "2.4.0"
   },
