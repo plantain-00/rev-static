@@ -35,8 +35,8 @@
     "@types/minimist": "1.2.0",
     "rimraf": "2.6.1",
     "standard": "10.0.2",
-    "tslint": "5.4.0",
-    "typescript": "2.4.0"
+    "tslint": "5.4.3",
+    "typescript": "2.4.1"
   },
   "dependencies": {
     "camelcase": "4.1.0",
