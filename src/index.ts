@@ -30,30 +30,32 @@ const defaultConfigName = "rev-static.config.js";
 
 const htmlExtensions = [".html", ".htm", ".ejs"];
 
-const defaultConfigContent = `module.exports = {
+const defaultConfigContent = `module.exports = [
+  {
     inputFiles: [
-        "demo/*.js",
-        "demo/*.css",
-        "demo/*.png",
-        "demo/*.ejs.html",
+      'demo/*.js',
+      'demo/*.css',
+      'demo/*.png',
+      'demo/*.ejs.html'
     ],
     excludeFiles: [
-        "demo/*-*.*",
+      'demo/*-*.*'
     ],
-    outputFiles: file => file.replace(".ejs", ""),
-    json: "demo/variables.json",
+    outputFiles: file => file.replace('.ejs', ''),
+    json: 'demo/variables.json',
     ejsOptions: {
-        rmWhitespace: true
+      rmWhitespace: true
     },
     sha: 256,
-    customNewFileName: (filePath, fileString, md5String, baseName, extensionName) => baseName + "-" + md5String + extensionName,
+    customNewFileName: (filePath, fileString, md5String, baseName, extensionName) => baseName + '-' + md5String + extensionName,
     noOutputFiles: [
-        "demo/worker.js",
+      'demo/worker.js'
     ],
-    es6: "demo/variables.ts",
-    less: "demo/variables.less",
-    scss: "demo/variables.scss",
-};
+    es6: 'demo/variables.ts',
+    less: 'demo/variables.less',
+    scss: 'demo/variables.scss'
+  }
+]
 `;
 
 function showHelpInformation() {
@@ -220,23 +222,21 @@ export function executeCommandLine() {
     }
     const configPath = path.resolve(process.cwd(), config);
 
-    let configData: {
-        inputFiles: string[];
-        excludeFiles: string[];
-        outputFiles: string[] | ((file: string) => string);
-        json?: boolean | string;
-        ejsOptions?: ejs.Options;
-        sha?: 256 | 384 | 512;
-        customNewFileName?: CustomNewFileName;
-        noOutputFiles?: string[];
-        es6?: boolean | string;
-        less?: boolean | string;
-        scss?: boolean | string;
-    };
+    let configDatas: ConfigData[];
     try {
-        configData = require(configPath);
-        if (configData && configData.noOutputFiles && configData.inputFiles) {
-            configData.inputFiles.push(...configData.noOutputFiles);
+        const configData: ConfigData | ConfigData[] = require(configPath);
+        if (Array.isArray(configData)) {
+            for (const data of configData) {
+                if (data && data.noOutputFiles && data.inputFiles) {
+                    data.inputFiles.push(...data.noOutputFiles);
+                }
+            }
+            configDatas = configData;
+        } else {
+            if (configData && configData.noOutputFiles && configData.inputFiles) {
+                configData.inputFiles.push(...configData.noOutputFiles);
+            }
+            configDatas = [configData];
         }
     } catch (error) {
         print(error);
@@ -252,134 +252,156 @@ export function executeCommandLine() {
             showHelpInformation();
             return;
         }
-        configData = {
-            inputFiles,
-            excludeFiles: [],
-            outputFiles: outFilesString.split(","),
-            json: argv.j || argv.json,
-            sha: shaType,
-            es6: argv.e || argv.es6,
-            less: argv.l || argv.less,
-            scss: argv.s || argv.scss,
-        };
+        configDatas = [
+            {
+                inputFiles,
+                excludeFiles: [],
+                outputFiles: outFilesString.split(","),
+                json: argv.j || argv.json,
+                sha: shaType,
+                es6: argv.e || argv.es6,
+                less: argv.l || argv.less,
+                scss: argv.s || argv.scss,
+            },
+        ];
         if (argv["--"]) {
             const ejsArgv = minimist(argv["--"]);
             delete ejsArgv._;
-            configData.ejsOptions = ejsArgv as any;
+            for (const configData of configDatas) {
+                configData.ejsOptions = ejsArgv as any;
+            }
         } else {
-            configData.ejsOptions = {};
+            for (const configData of configDatas) {
+                configData.ejsOptions = {};
+            }
         }
     }
 
-    if (!configData.inputFiles || configData.inputFiles.length === 0) {
-        print("Error: no input files.");
-        showHelpInformation();
-        return;
-    }
+    for (const configData of configDatas) {
+        if (!configData.inputFiles || configData.inputFiles.length === 0) {
+            print("Error: no input files.");
+            showHelpInformation();
+            return;
+        }
 
-    const htmlInputFiles: string[] = [];
-    const jsCssInputFiles: string[] = [];
+        const htmlInputFiles: string[] = [];
+        const jsCssInputFiles: string[] = [];
 
-    Promise.all(configData.inputFiles.map(file => globAsync(file, configData.excludeFiles))).then(files => {
-        const uniqFiles = uniq(flatten(files));
+        Promise.all(configData.inputFiles.map(file => globAsync(file, configData.excludeFiles))).then(files => {
+            const uniqFiles = uniq(flatten(files));
 
-        for (const file of uniqFiles) {
-            if (!fs.existsSync(file)) {
-                print(`Error: file: "${file}" not exists.`);
-                showHelpInformation();
-                return;
+            for (const file of uniqFiles) {
+                if (!fs.existsSync(file)) {
+                    print(`Error: file: "${file}" not exists.`);
+                    showHelpInformation();
+                    return;
+                }
+                const extensionName = path.extname(file);
+                if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
+                    htmlInputFiles.push(file);
+                } else {
+                    jsCssInputFiles.push(file);
+                }
             }
-            const extensionName = path.extname(file);
-            if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
-                htmlInputFiles.push(file);
+
+            let htmlOutputFiles: string[];
+            if (typeof configData.outputFiles === "function") {
+                htmlOutputFiles = htmlInputFiles.map(file => (configData.outputFiles as (file: string) => string)(file));
             } else {
-                jsCssInputFiles.push(file);
+                if (configData.outputFiles.length !== htmlInputFiles.length) {
+                    print(`Error: input ${htmlInputFiles.length} html files, but output ${configData.outputFiles.length} html files.`);
+                    showHelpInformation();
+                    return;
+                }
+                htmlOutputFiles = configData.outputFiles;
             }
-        }
 
-        let htmlOutputFiles: string[];
-        if (typeof configData.outputFiles === "function") {
-            htmlOutputFiles = htmlInputFiles.map(file => (configData.outputFiles as (file: string) => string)(file));
-        } else {
-            if (configData.outputFiles.length !== htmlInputFiles.length) {
-                print(`Error: input ${htmlInputFiles.length} html files, but output ${configData.outputFiles.length} html files.`);
-                showHelpInformation();
-                return;
-            }
-            htmlOutputFiles = configData.outputFiles;
-        }
+            const newFileNames = revisionCssJs(jsCssInputFiles, {
+                shaType: configData.sha,
+                customNewFileName: configData.customNewFileName,
+                noOutputFiles: configData.noOutputFiles,
+            });
+            print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
 
-        const newFileNames = revisionCssJs(jsCssInputFiles, {
-            shaType: configData.sha,
-            customNewFileName: configData.customNewFileName,
-            noOutputFiles: configData.noOutputFiles,
+            revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: configData.ejsOptions, customNewFileName: configData.customNewFileName }).then(() => {
+                if (configData.json === true) {
+                    print(`Warn: expect path of json file.`);
+                } else if (typeof configData.json === "string") {
+                    writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
+                        print(`Success: to "${configData.json}".`);
+                    }, error => {
+                        print(error);
+                    });
+                }
+
+                if (configData.es6 === true) {
+                    print(`Warn: expect path of es6 file.`);
+                } else if (typeof configData.es6 === "string") {
+                    const variables: string[] = [];
+                    for (const key in newFileNames) {
+                        if (isImage(key)) {
+                            variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
+                        }
+                    }
+
+                    writeFileAsync(configData.es6, variables.join("")).then(() => {
+                        print(`Success: to "${configData.es6}".`);
+                    }, error => {
+                        print(error);
+                    });
+                }
+
+                if (configData.less === true) {
+                    print(`Warn: expect path of less file.`);
+                } else if (typeof configData.less === "string") {
+                    const variables: string[] = [];
+                    for (const key in newFileNames) {
+                        if (isImage(key)) {
+                            variables.push(`@${key}: '${newFileNames[key]}';\n`);
+                        }
+                    }
+
+                    writeFileAsync(configData.less, variables.join("")).then(() => {
+                        print(`Success: to "${configData.less}".`);
+                    }, error => {
+                        print(error);
+                    });
+                }
+
+                if (configData.scss === true) {
+                    print(`Warn: expect path of scss file.`);
+                } else if (typeof configData.scss === "string") {
+                    const variables: string[] = [];
+                    for (const key in newFileNames) {
+                        if (isImage(key)) {
+                            variables.push(`$${key}: '${newFileNames[key]}';\n`);
+                        }
+                    }
+
+                    writeFileAsync(configData.scss, variables.join("")).then(() => {
+                        print(`Success: to "${configData.scss}".`);
+                    }, error => {
+                        print(error);
+                    });
+                }
+            });
+        }, (error: Error) => {
+            print(error);
+            showHelpInformation();
         });
-        print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
-
-        revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: configData.ejsOptions, customNewFileName: configData.customNewFileName }).then(() => {
-            if (configData.json === true) {
-                print(`Warn: expect path of json file.`);
-            } else if (typeof configData.json === "string") {
-                writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
-                    print(`Success: to "${configData.json}".`);
-                }, error => {
-                    print(error);
-                });
-            }
-
-            if (configData.es6 === true) {
-                print(`Warn: expect path of es6 file.`);
-            } else if (typeof configData.es6 === "string") {
-                const variables: string[] = [];
-                for (const key in newFileNames) {
-                    if (isImage(key)) {
-                        variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
-                    }
-                }
-
-                writeFileAsync(configData.es6, variables.join("")).then(() => {
-                    print(`Success: to "${configData.es6}".`);
-                }, error => {
-                    print(error);
-                });
-            }
-
-            if (configData.less === true) {
-                print(`Warn: expect path of less file.`);
-            } else if (typeof configData.less === "string") {
-                const variables: string[] = [];
-                for (const key in newFileNames) {
-                    if (isImage(key)) {
-                        variables.push(`@${key}: '${newFileNames[key]}';\n`);
-                    }
-                }
-
-                writeFileAsync(configData.less, variables.join("")).then(() => {
-                    print(`Success: to "${configData.less}".`);
-                }, error => {
-                    print(error);
-                });
-            }
-
-            if (configData.scss === true) {
-                print(`Warn: expect path of scss file.`);
-            } else if (typeof configData.scss === "string") {
-                const variables: string[] = [];
-                for (const key in newFileNames) {
-                    if (isImage(key)) {
-                        variables.push(`$${key}: '${newFileNames[key]}';\n`);
-                    }
-                }
-
-                writeFileAsync(configData.scss, variables.join("")).then(() => {
-                    print(`Success: to "${configData.scss}".`);
-                }, error => {
-                    print(error);
-                });
-            }
-        });
-    }, (error: Error) => {
-        print(error);
-        showHelpInformation();
-    });
+    }
 }
+
+type ConfigData = {
+    inputFiles: string[];
+    excludeFiles: string[];
+    outputFiles: string[] | ((file: string) => string);
+    json?: boolean | string;
+    ejsOptions?: ejs.Options;
+    sha?: 256 | 384 | 512;
+    customNewFileName?: CustomNewFileName;
+    noOutputFiles?: string[];
+    es6?: boolean | string;
+    less?: boolean | string;
+    scss?: boolean | string;
+};
