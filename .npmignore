@@ -6,3 +6,5 @@ tests
 tslint.json
 .travis.yml
 tsconfig.json
+**/*.ts
+!**/*.d.ts
