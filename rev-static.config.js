@@ -21,6 +21,7 @@ module.exports = [
     ],
     es6: 'demo/variables.ts',
     less: 'demo/variables.less',
-    scss: 'demo/variables.scss'
+    scss: 'demo/variables.scss',
+    base: 'demo'
   }
 ]

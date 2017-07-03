@@ -77,6 +77,7 @@ Options:
   --e, --es6 [file]    output the variables in a es6 file.
   --l, --less [file]   output the variables in a less file.
   --s, --scss [file]   output the variables in a scss file.
+  --base [path]        base path.
 ```
 
 ## usage from nodejs

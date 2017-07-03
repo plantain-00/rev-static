@@ -81,6 +81,7 @@ function showHelpInformation() {
     print("  --e, --es6 [file]    output the variables in a es6 file.");
     print("  --l, --less [file]   output the variables in a less file.");
     print("  --s, --scss [file]   output the variables in a scss file.");
+    print("  --base [path]        base path.");
 }
 
 function globAsync(pattern: string, ignore: string[]) {
@@ -129,6 +130,7 @@ export type Options = {
     customNewFileName?: CustomNewFileName;
     shaType?: 256 | 384 | 512 | undefined;
     noOutputFiles?: string[];
+    base?: string;
 };
 
 function getNewFileName(fileString: string, filePath: string, customNewFileName?: CustomNewFileName) {
@@ -152,7 +154,7 @@ function getNewFileName(fileString: string, filePath: string, customNewFileName?
 export function revisionCssJs(inputFiles: string[], options?: Options) {
     const variables = ((options && options.shaType) ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
     for (const filePath of inputFiles) {
-        const variableName = getVariableName(filePath);
+        const variableName = getVariableName((options && options.base) ? path.relative(options.base, filePath) : filePath);
         const fileString = fs.readFileSync(filePath).toString();
         const newFileName = getNewFileName(fileString, filePath, options ? options.customNewFileName : undefined);
         if (!options || !options.noOutputFiles || options.noOutputFiles.indexOf(filePath) === -1) {
@@ -320,6 +322,7 @@ export function executeCommandLine() {
                 shaType: configData.sha,
                 customNewFileName: configData.customNewFileName,
                 noOutputFiles: configData.noOutputFiles,
+                base: configData.base,
             });
             print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
 
@@ -404,4 +407,5 @@ type ConfigData = {
     es6?: boolean | string;
     less?: boolean | string;
     scss?: boolean | string;
+    base?: string;
 };
