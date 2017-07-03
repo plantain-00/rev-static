@@ -1,6 +1,6 @@
 {
   "name": "rev-static",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
@@ -36,6 +36,7 @@
     "@types/jasmine": "2.5.53",
     "@types/minimist": "1.2.0",
     "jasmine": "2.6.0",
+    "pretty-bytes": "4.0.2",
     "rimraf": "2.6.1",
     "standard": "10.0.2",
     "tslint": "5.4.3",

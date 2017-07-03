@@ -7,6 +7,7 @@ import * as path from "path";
 import * as glob from "glob";
 import * as flatten from "lodash.flatten";
 import * as uniq from "lodash.uniq";
+import * as prettyBytes from "pretty-bytes";
 import * as packageJson from "../package.json";
 
 function md5(str: string): string {
@@ -153,9 +154,11 @@ function getNewFileName(fileString: string, filePath: string, customNewFileName?
  */
 export function revisionCssJs(inputFiles: string[], options?: Options) {
     const variables = ((options && options.shaType) ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
+    const fileSizes: { [name: string]: string } = {};
     for (const filePath of inputFiles) {
         const variableName = getVariableName((options && options.base) ? path.relative(options.base, filePath) : filePath);
         const fileString = fs.readFileSync(filePath).toString();
+        fileSizes[variableName] = prettyBytes(fileString.length);
         const newFileName = getNewFileName(fileString, filePath, options ? options.customNewFileName : undefined);
         if (!options || !options.noOutputFiles || options.noOutputFiles.indexOf(filePath) === -1) {
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
@@ -165,7 +168,7 @@ export function revisionCssJs(inputFiles: string[], options?: Options) {
             variables.sri[variableName] = `sha${options.shaType}-` + calculateSha(fileString, options.shaType);
         }
     }
-    return variables;
+    return { variables, fileSizes };
 }
 
 /**
@@ -318,7 +321,7 @@ export function executeCommandLine() {
                 htmlOutputFiles = configData.outputFiles;
             }
 
-            const newFileNames = revisionCssJs(jsCssInputFiles, {
+            const { variables: newFileNames, fileSizes } = revisionCssJs(jsCssInputFiles, {
                 shaType: configData.sha,
                 customNewFileName: configData.customNewFileName,
                 noOutputFiles: configData.noOutputFiles,
@@ -387,6 +390,14 @@ export function executeCommandLine() {
                         print(error);
                     });
                 }
+
+                if (configData.fileSize && typeof configData.fileSize === "string") {
+                    writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  ")).then(() => {
+                        print(`Success: to "${configData.fileSize}".`);
+                    }, error => {
+                        print(error);
+                    });
+                }
             });
         }, (error: Error) => {
             print(error);
@@ -408,4 +419,5 @@ type ConfigData = {
     less?: boolean | string;
     scss?: boolean | string;
     base?: string;
+    fileSize?: string;
 };

@@ -22,6 +22,7 @@ module.exports = [
     es6: 'demo/variables.ts',
     less: 'demo/variables.less',
     scss: 'demo/variables.scss',
-    base: 'demo'
+    base: 'demo',
+    fileSize: 'demo/file-size.json'
   }
 ]

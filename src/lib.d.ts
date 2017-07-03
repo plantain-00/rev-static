@@ -11,3 +11,8 @@ declare module "lodash.uniq" {
 declare module "*.json" {
     export const version: string;
 }
+declare module "pretty-bytes" {
+    function prettyBytes(bytes: number): string;
+    export = prettyBytes;
+    namespace prettyBytes { }
+}
