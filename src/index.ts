@@ -33,9 +33,9 @@ const defaultConfigName = "rev-static.config.js";
 
 const htmlExtensions = [".html", ".htm", ".ejs"];
 
-function globAsync(pattern: string, ignore: string[]) {
+function globAsync(pattern: string) {
     return new Promise<string[]>((resolve, reject) => {
-        glob(pattern, { ignore }, (error, matches) => {
+        glob(pattern, (error, matches) => {
             if (error) {
                 reject(error);
             } else {
@@ -169,8 +169,11 @@ export async function executeCommandLine() {
             const htmlInputFiles: string[] = [];
             const jsCssInputFiles: string[] = [];
 
-            const files = await Promise.all(configData.inputFiles.map(file => globAsync(file, configData.excludeFiles)));
-            const uniqFiles = uniq(flatten(files));
+            const files = await Promise.all(configData.inputFiles.map(file => globAsync(file)));
+            let uniqFiles = uniq(flatten(files));
+            if (configData.excludeFiles) {
+                uniqFiles = uniqFiles.filter(file => configData.excludeFiles.every(excludeFile => !minimatch(file, excludeFile)));
+            }
 
             for (const file of uniqFiles) {
                 if (!fs.existsSync(file)) {
