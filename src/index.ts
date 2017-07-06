@@ -114,10 +114,10 @@ function revisionCssJs(inputFiles: string[], configData: ConfigData) {
             newFileName = path.basename(filePath);
         } else {
             variableName = getVariableName(configData.base ? path.relative(configData.base, filePath) : filePath);
-            fileSizes[variableName] = prettyBytes(fileString.length);
             newFileName = getNewFileName(fileString, filePath, configData.customNewFileName);
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
         }
+        fileSizes[variableName] = prettyBytes(fileString.length);
         variables[variableName] = newFileName;
         if (configData.sha) {
             variables.sri[variableName] = `sha${configData.sha}-` + calculateSha(fileString, configData.sha);
@@ -236,7 +236,7 @@ export async function executeCommandLine() {
                 print(`Success: to "${configData.scss}".`);
             }
 
-            if (configData.fileSize && typeof configData.fileSize === "string") {
+            if (configData.fileSize) {
                 await writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  "));
                 print(`Success: to "${configData.fileSize}".`);
             }
