@@ -9,7 +9,6 @@ script:
   - npm run build
   - npm run lint
   - npm run demo-test
-  - npm run commonjs-test
 env:
   - CXX=g++-4.8
 addons:
