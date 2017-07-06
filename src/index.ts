@@ -9,6 +9,7 @@ import * as flatten from "lodash.flatten";
 import * as uniq from "lodash.uniq";
 import * as prettyBytes from "pretty-bytes";
 import * as minimatch from "minimatch";
+import exit = require("exit");
 import * as packageJson from "../package.json";
 
 function md5(str: string): string {
@@ -142,121 +143,103 @@ function isImage(key: string) {
 }
 
 export async function executeCommandLine() {
-    const argv = minimist(process.argv.slice(2), { "--": true });
-
-    const showVersion = argv.v || argv.version;
-    if (showVersion) {
-        showToolVersion();
-        return;
-    }
-
-    let config: string | undefined = argv.config;
-    if (!config) {
-        config = defaultConfigName;
-    }
-    const configPath = path.resolve(process.cwd(), config);
-
-    let configDatas: ConfigData[];
     try {
-        const configData: ConfigData | ConfigData[] = require(configPath);
-        configDatas = Array.isArray(configData) ? configData : [configData];
-    } catch (error) {
-        print(error);
-        return;
-    }
+        const argv = minimist(process.argv.slice(2), { "--": true });
 
-    for (const configData of configDatas) {
-        if (!configData.inputFiles || configData.inputFiles.length === 0) {
-            print("Error: no input files.");
+        const showVersion = argv.v || argv.version;
+        if (showVersion) {
+            showToolVersion();
             return;
         }
 
-        const htmlInputFiles: string[] = [];
-        const jsCssInputFiles: string[] = [];
-
-        const files = await Promise.all(configData.inputFiles.map(file => globAsync(file, configData.excludeFiles)));
-        const uniqFiles = uniq(flatten(files));
-
-        for (const file of uniqFiles) {
-            if (!fs.existsSync(file)) {
-                print(`Error: file: "${file}" not exists.`);
-                return;
-            }
-            const extensionName = path.extname(file);
-            if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
-                htmlInputFiles.push(file);
-            } else {
-                jsCssInputFiles.push(file);
-            }
+        let config: string | undefined = argv.config;
+        if (!config) {
+            config = defaultConfigName;
         }
+        const configPath = path.resolve(process.cwd(), config);
 
-        const htmlOutputFiles = htmlInputFiles.map(file => configData.outputFiles(file));
+        const configFileData: ConfigData | ConfigData[] = require(configPath);
+        const configDatas = Array.isArray(configFileData) ? configFileData : [configFileData];
 
-        const { variables: newFileNames, fileSizes } = revisionCssJs(jsCssInputFiles, configData);
-        print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
+        for (const configData of configDatas) {
+            if (!configData.inputFiles || configData.inputFiles.length === 0) {
+                throw new Error("Error: no input files.");
+            }
 
-        await revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, configData);
+            const htmlInputFiles: string[] = [];
+            const jsCssInputFiles: string[] = [];
 
-        if (configData.json) {
-            writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
+            const files = await Promise.all(configData.inputFiles.map(file => globAsync(file, configData.excludeFiles)));
+            const uniqFiles = uniq(flatten(files));
+
+            for (const file of uniqFiles) {
+                if (!fs.existsSync(file)) {
+                    throw new Error(`Error: file: "${file}" not exists.`);
+                }
+                const extensionName = path.extname(file);
+                if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
+                    htmlInputFiles.push(file);
+                } else {
+                    jsCssInputFiles.push(file);
+                }
+            }
+
+            const htmlOutputFiles = htmlInputFiles.map(file => configData.outputFiles(file));
+
+            const { variables: newFileNames, fileSizes } = revisionCssJs(jsCssInputFiles, configData);
+            print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
+
+            await revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, configData);
+
+            if (configData.json) {
+                await writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  "));
                 print(`Success: to "${configData.json}".`);
-            }, error => {
-                print(error);
-            });
-        }
-
-        if (configData.es6) {
-            const variables: string[] = [];
-            for (const key in newFileNames) {
-                if (isImage(key)) {
-                    variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
-                }
             }
 
-            writeFileAsync(configData.es6, variables.join("")).then(() => {
+            if (configData.es6) {
+                const variables: string[] = [];
+                for (const key in newFileNames) {
+                    if (isImage(key)) {
+                        variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
+                    }
+                }
+
+                await writeFileAsync(configData.es6, variables.join(""));
                 print(`Success: to "${configData.es6}".`);
-            }, error => {
-                print(error);
-            });
-        }
-
-        if (configData.less) {
-            const variables: string[] = [];
-            for (const key in newFileNames) {
-                if (isImage(key)) {
-                    variables.push(`@${key}: '${newFileNames[key]}';\n`);
-                }
             }
 
-            writeFileAsync(configData.less, variables.join("")).then(() => {
+            if (configData.less) {
+                const variables: string[] = [];
+                for (const key in newFileNames) {
+                    if (isImage(key)) {
+                        variables.push(`@${key}: '${newFileNames[key]}';\n`);
+                    }
+                }
+
+                await writeFileAsync(configData.less, variables.join(""));
                 print(`Success: to "${configData.less}".`);
-            }, error => {
-                print(error);
-            });
-        }
-
-        if (configData.scss) {
-            const variables: string[] = [];
-            for (const key in newFileNames) {
-                if (isImage(key)) {
-                    variables.push(`$${key}: '${newFileNames[key]}';\n`);
-                }
             }
 
-            writeFileAsync(configData.scss, variables.join("")).then(() => {
-                print(`Success: to "${configData.scss}".`);
-            }, error => {
-                print(error);
-            });
-        }
+            if (configData.scss) {
+                const variables: string[] = [];
+                for (const key in newFileNames) {
+                    if (isImage(key)) {
+                        variables.push(`$${key}: '${newFileNames[key]}';\n`);
+                    }
+                }
 
-        if (configData.fileSize && typeof configData.fileSize === "string") {
-            writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  ")).then(() => {
+                await writeFileAsync(configData.scss, variables.join(""));
+                print(`Success: to "${configData.scss}".`);
+            }
+
+            if (configData.fileSize && typeof configData.fileSize === "string") {
+                await writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  "));
                 print(`Success: to "${configData.fileSize}".`);
-            }, error => {
-                print(error);
-            });
+            }
         }
+    } catch (error) {
+        print(error);
+        exit(1);
     }
 }
 
