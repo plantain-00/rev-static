@@ -7,7 +7,7 @@
     "lint": "tslint \"src/index.ts\" && npm run standard",
     "demo-test": "./bin/rev-static",
     "commonjs-test": "node tests/commonjs.js",
-    "build": "rimraf dist demo/*-*.* demo/variables.* && tsc -p src",
+    "build": "rimraf dist demo/bar-*.css demo/foo-*.js demo/test-*.png demo/variables.* demo/baz.html demo/qux.html demo/file-size.json && tsc -p src",
     "standard": "standard \"**/*.config.js\"",
     "fix": "standard --fix \"**/*.config.js\"",
     "test": "tsc -p spec && jasmine"
@@ -34,6 +34,7 @@
     "@types/ejs": "2.3.33",
     "@types/glob": "5.0.30",
     "@types/jasmine": "2.5.53",
+    "@types/minimatch": "2.0.29",
     "@types/minimist": "1.2.0",
     "jasmine": "2.6.0",
     "rimraf": "2.6.1",
@@ -47,6 +48,7 @@
     "glob": "7.1.2",
     "lodash.flatten": "4.4.0",
     "lodash.uniq": "4.5.0",
+    "minimatch": "3.0.4",
     "minimist": "1.2.0",
     "pretty-bytes": "4.0.2"
   },

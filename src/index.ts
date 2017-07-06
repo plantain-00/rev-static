@@ -8,6 +8,7 @@ import * as glob from "glob";
 import * as flatten from "lodash.flatten";
 import * as uniq from "lodash.uniq";
 import * as prettyBytes from "pretty-bytes";
+import * as minimatch from "minimatch";
 import * as packageJson from "../package.json";
 
 function md5(str: string): string {
@@ -42,16 +43,22 @@ const defaultConfigContent = `module.exports = [
     excludeFiles: [
       'demo/*-*.*'
     ],
+    revisedFiles: [
+      'demo/foo-*.js'
+    ],
     outputFiles: file => file.replace('.ejs', ''),
-    json: 'demo/variables.json',
     ejsOptions: {
       rmWhitespace: true
     },
     sha: 256,
     customNewFileName: (filePath, fileString, md5String, baseName, extensionName) => baseName + '-' + md5String + extensionName,
+    customOldFileName: (filePath, baseName, extensionName) => baseName.split('-')[0] + extensionName,
+    json: 'demo/variables.json',
     es6: 'demo/variables.ts',
     less: 'demo/variables.less',
-    scss: 'demo/variables.scss'
+    scss: 'demo/variables.scss',
+    base: 'demo',
+    fileSize: 'demo/file-size.json'
   }
 ]
 `;
@@ -124,10 +131,14 @@ function getVariableName(filePath: string) {
 
 export type CustomNewFileName = (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
 
+export type CustomOldFileName = (filePath: string, baseName: string, extensionName: string) => string;
+
 export type Options = {
     customNewFileName?: CustomNewFileName;
+    customOldFileName?: CustomOldFileName;
     shaType?: 256 | 384 | 512 | undefined;
     base?: string;
+    revisedFiles?: string[];
 };
 
 function getNewFileName(fileString: string, filePath: string, customNewFileName?: CustomNewFileName) {
@@ -138,6 +149,16 @@ function getNewFileName(fileString: string, filePath: string, customNewFileName?
         return customNewFileName(filePath, fileString, md5String, baseName, extensionName);
     } else {
         return baseName + "-" + md5String + extensionName;
+    }
+}
+
+function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName) {
+    const extensionName = path.extname(filePath);
+    const baseName = path.basename(filePath, extensionName);
+    if (customOldFileName) {
+        return customOldFileName(filePath, baseName, extensionName);
+    } else {
+        return baseName.split("-")[0] + extensionName;
     }
 }
 
@@ -152,11 +173,20 @@ export function revisionCssJs(inputFiles: string[], options?: Options) {
     const variables = ((options && options.shaType) ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
     const fileSizes: { [name: string]: string } = {};
     for (const filePath of inputFiles) {
-        const variableName = getVariableName((options && options.base) ? path.relative(options.base, filePath) : filePath);
         const fileString = fs.readFileSync(filePath).toString();
-        fileSizes[variableName] = prettyBytes(fileString.length);
-        const newFileName = getNewFileName(fileString, filePath, options ? options.customNewFileName : undefined);
-        if (!options) {
+        let variableName: string;
+        let newFileName: string;
+        if (options
+            && options.revisedFiles
+            && options.revisedFiles.length > 0
+            && options.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
+            const oldFileName = getOldFileName(filePath, options.customOldFileName);
+            variableName = getVariableName(options.base ? path.relative(options.base, oldFileName) : oldFileName);
+            newFileName = options.base ? path.relative(options.base, filePath) : filePath;
+        } else {
+            variableName = getVariableName((options && options.base) ? path.relative(options.base, filePath) : filePath);
+            fileSizes[variableName] = prettyBytes(fileString.length);
+            newFileName = getNewFileName(fileString, filePath, options ? options.customNewFileName : undefined);
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
         }
         variables[variableName] = newFileName;
@@ -308,7 +338,9 @@ export function executeCommandLine() {
             const { variables: newFileNames, fileSizes } = revisionCssJs(jsCssInputFiles, {
                 shaType: configData.sha,
                 customNewFileName: configData.customNewFileName,
+                customOldFileName: configData.customOldFileName,
                 base: configData.base,
+                revisedFiles: configData.revisedFiles,
             });
             print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
 
@@ -392,11 +424,13 @@ export function executeCommandLine() {
 type ConfigData = {
     inputFiles: string[];
     excludeFiles: string[];
+    revisedFiles?: string[];
     outputFiles: string[] | ((file: string) => string);
     json?: boolean | string;
     ejsOptions?: ejs.Options;
     sha?: 256 | 384 | 512;
     customNewFileName?: CustomNewFileName;
+    customOldFileName?: CustomOldFileName;
     es6?: boolean | string;
     less?: boolean | string;
     scss?: boolean | string;

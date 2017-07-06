@@ -7,15 +7,18 @@ module.exports = [
       'demo/*.ejs.html'
     ],
     excludeFiles: [
-      'demo/*-*.*'
+    ],
+    revisedFiles: [
+      'demo/foo2-*.js'
     ],
     outputFiles: file => file.replace('.ejs', ''),
-    json: 'demo/variables.json',
     ejsOptions: {
       rmWhitespace: true
     },
     sha: 256,
     customNewFileName: (filePath, fileString, md5String, baseName, extensionName) => baseName + '-' + md5String + extensionName,
+    customOldFileName: (filePath, baseName, extensionName) => baseName.split('-')[0] + extensionName,
+    json: 'demo/variables.json',
     es6: 'demo/variables.ts',
     less: 'demo/variables.less',
     scss: 'demo/variables.scss',
