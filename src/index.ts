@@ -72,17 +72,9 @@ function getVariableName(filePath: string) {
     return camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
 }
 
-export type CustomNewFileName = (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
+type CustomNewFileName = (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string;
 
-export type CustomOldFileName = (filePath: string, baseName: string, extensionName: string) => string;
-
-export type Options = {
-    customNewFileName?: CustomNewFileName;
-    customOldFileName?: CustomOldFileName;
-    shaType?: 256 | 384 | 512 | undefined;
-    base?: string;
-    revisedFiles?: string[];
-};
+type CustomOldFileName = (filePath: string, baseName: string, extensionName: string) => string;
 
 function getNewFileName(fileString: string, filePath: string, customNewFileName?: CustomNewFileName) {
     const md5String = md5(fileString);
@@ -105,56 +97,42 @@ function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName)
     }
 }
 
-/**
- * calculate and return md5 version of all input files
- * copy input files to the versioned files, eg, `foo.js` -> `foo-cb6143ff70a133027139bbf27746a3c4.js`
- * you can change the rule of generating new file names, by the optional `customNewFileName` in `options` parameter
- * return key of the return object, is camelcased file name, eg, `foo/bar.js` -> `fooBarJs`
- * `inputFiles` support glob
- */
-export function revisionCssJs(inputFiles: string[], options?: Options) {
-    const variables = ((options && options.shaType) ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
+function revisionCssJs(inputFiles: string[], configData: ConfigData) {
+    const variables = (configData.sha ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
     const fileSizes: { [name: string]: string } = {};
     for (const filePath of inputFiles) {
         const fileString = fs.readFileSync(filePath).toString();
         let variableName: string;
         let newFileName: string;
-        if (options
-            && options.revisedFiles
-            && options.revisedFiles.length > 0
-            && options.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
-            const oldFileName = getOldFileName(filePath, options.customOldFileName);
-            variableName = getVariableName(options.base ? path.relative(options.base, oldFileName) : oldFileName);
-            newFileName = options.base ? path.relative(options.base, filePath) : filePath;
+        if (configData.revisedFiles
+            && configData.revisedFiles.length > 0
+            && configData.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
+            const oldFileName = getOldFileName(filePath, configData.customOldFileName);
+            variableName = getVariableName(configData.base ? path.relative(configData.base, oldFileName) : oldFileName);
+            newFileName = configData.base ? path.relative(configData.base, filePath) : filePath;
         } else {
-            variableName = getVariableName((options && options.base) ? path.relative(options.base, filePath) : filePath);
+            variableName = getVariableName(configData.base ? path.relative(configData.base, filePath) : filePath);
             fileSizes[variableName] = prettyBytes(fileString.length);
-            newFileName = getNewFileName(fileString, filePath, options ? options.customNewFileName : undefined);
+            newFileName = getNewFileName(fileString, filePath, configData.customNewFileName);
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
         }
         variables[variableName] = newFileName;
-        if (options && options.shaType) {
-            variables.sri[variableName] = `sha${options.shaType}-` + calculateSha(fileString, options.shaType);
+        if (configData.sha) {
+            variables.sri[variableName] = `sha${configData.sha}-` + calculateSha(fileString, configData.sha);
         }
     }
     return { variables, fileSizes };
 }
 
-/**
- * generate html files just as the `outputFiles` shows
- * the `inputFiles` should be `ejs` templates, the variables will be `versions` from `revisionCssJs` function
- * the `inputFiles` and `outputFiles` should be one-to-one map, eg, input `["foo.ejs.html", "bar.ejs.html"]` and output `["foo.html", "bar.html"]`
- * the `ejsOptions` in `options` will be transfered to ejs
- */
-export async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], newFileNames: { [name: string]: string }, options?: { ejsOptions?: ejs.Options, customNewFileName?: CustomNewFileName }) {
-    const ejsOptions = options && options.ejsOptions ? options.ejsOptions : {};
+async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], newFileNames: { [name: string]: string }, configData: ConfigData) {
+    const ejsOptions = configData.ejsOptions ? configData.ejsOptions : {};
     for (let i = 0; i < htmlInputFiles.length; i++) {
         const fileString = await renderEjsAsync(htmlInputFiles[i], newFileNames, ejsOptions);
         await writeFileAsync(htmlOutputFiles[i], fileString);
         print(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
 
         const variableName = getVariableName(htmlOutputFiles[i]);
-        const newFileName = getNewFileName(fileString, htmlOutputFiles[i], options ? options.customNewFileName : undefined);
+        const newFileName = getNewFileName(fileString, htmlOutputFiles[i], configData.customNewFileName);
         newFileNames[variableName] = newFileName;
     }
 }
@@ -163,7 +141,7 @@ function isImage(key: string) {
     return key !== "sri" && !key.endsWith("Js") && !key.endsWith("Html") && !key.endsWith("Css");
 }
 
-export function executeCommandLine() {
+export async function executeCommandLine() {
     const argv = minimist(process.argv.slice(2), { "--": true });
 
     const showVersion = argv.v || argv.version;
@@ -196,115 +174,89 @@ export function executeCommandLine() {
         const htmlInputFiles: string[] = [];
         const jsCssInputFiles: string[] = [];
 
-        Promise.all(configData.inputFiles.map(file => globAsync(file, configData.excludeFiles))).then(files => {
-            const uniqFiles = uniq(flatten(files));
+        const files = await Promise.all(configData.inputFiles.map(file => globAsync(file, configData.excludeFiles)));
+        const uniqFiles = uniq(flatten(files));
 
-            for (const file of uniqFiles) {
-                if (!fs.existsSync(file)) {
-                    print(`Error: file: "${file}" not exists.`);
-                    return;
-                }
-                const extensionName = path.extname(file);
-                if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
-                    htmlInputFiles.push(file);
-                } else {
-                    jsCssInputFiles.push(file);
-                }
+        for (const file of uniqFiles) {
+            if (!fs.existsSync(file)) {
+                print(`Error: file: "${file}" not exists.`);
+                return;
             }
-
-            let htmlOutputFiles: string[];
-            if (typeof configData.outputFiles === "function") {
-                htmlOutputFiles = htmlInputFiles.map(file => (configData.outputFiles as (file: string) => string)(file));
+            const extensionName = path.extname(file);
+            if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
+                htmlInputFiles.push(file);
             } else {
-                if (configData.outputFiles.length !== htmlInputFiles.length) {
-                    print(`Error: input ${htmlInputFiles.length} html files, but output ${configData.outputFiles.length} html files.`);
-                    return;
+                jsCssInputFiles.push(file);
+            }
+        }
+
+        const htmlOutputFiles = htmlInputFiles.map(file => configData.outputFiles(file));
+
+        const { variables: newFileNames, fileSizes } = revisionCssJs(jsCssInputFiles, configData);
+        print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
+
+        await revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, configData);
+
+        if (configData.json) {
+            writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
+                print(`Success: to "${configData.json}".`);
+            }, error => {
+                print(error);
+            });
+        }
+
+        if (configData.es6) {
+            const variables: string[] = [];
+            for (const key in newFileNames) {
+                if (isImage(key)) {
+                    variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
                 }
-                htmlOutputFiles = configData.outputFiles;
             }
 
-            const { variables: newFileNames, fileSizes } = revisionCssJs(jsCssInputFiles, {
-                shaType: configData.sha,
-                customNewFileName: configData.customNewFileName,
-                customOldFileName: configData.customOldFileName,
-                base: configData.base,
-                revisedFiles: configData.revisedFiles,
+            writeFileAsync(configData.es6, variables.join("")).then(() => {
+                print(`Success: to "${configData.es6}".`);
+            }, error => {
+                print(error);
             });
-            print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
+        }
 
-            revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, { ejsOptions: configData.ejsOptions, customNewFileName: configData.customNewFileName }).then(() => {
-                if (configData.json === true) {
-                    print(`Warn: expect path of json file.`);
-                } else if (typeof configData.json === "string") {
-                    writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
-                        print(`Success: to "${configData.json}".`);
-                    }, error => {
-                        print(error);
-                    });
+        if (configData.less) {
+            const variables: string[] = [];
+            for (const key in newFileNames) {
+                if (isImage(key)) {
+                    variables.push(`@${key}: '${newFileNames[key]}';\n`);
                 }
+            }
 
-                if (configData.es6 === true) {
-                    print(`Warn: expect path of es6 file.`);
-                } else if (typeof configData.es6 === "string") {
-                    const variables: string[] = [];
-                    for (const key in newFileNames) {
-                        if (isImage(key)) {
-                            variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
-                        }
-                    }
-
-                    writeFileAsync(configData.es6, variables.join("")).then(() => {
-                        print(`Success: to "${configData.es6}".`);
-                    }, error => {
-                        print(error);
-                    });
-                }
-
-                if (configData.less === true) {
-                    print(`Warn: expect path of less file.`);
-                } else if (typeof configData.less === "string") {
-                    const variables: string[] = [];
-                    for (const key in newFileNames) {
-                        if (isImage(key)) {
-                            variables.push(`@${key}: '${newFileNames[key]}';\n`);
-                        }
-                    }
-
-                    writeFileAsync(configData.less, variables.join("")).then(() => {
-                        print(`Success: to "${configData.less}".`);
-                    }, error => {
-                        print(error);
-                    });
-                }
-
-                if (configData.scss === true) {
-                    print(`Warn: expect path of scss file.`);
-                } else if (typeof configData.scss === "string") {
-                    const variables: string[] = [];
-                    for (const key in newFileNames) {
-                        if (isImage(key)) {
-                            variables.push(`$${key}: '${newFileNames[key]}';\n`);
-                        }
-                    }
-
-                    writeFileAsync(configData.scss, variables.join("")).then(() => {
-                        print(`Success: to "${configData.scss}".`);
-                    }, error => {
-                        print(error);
-                    });
-                }
-
-                if (configData.fileSize && typeof configData.fileSize === "string") {
-                    writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  ")).then(() => {
-                        print(`Success: to "${configData.fileSize}".`);
-                    }, error => {
-                        print(error);
-                    });
-                }
+            writeFileAsync(configData.less, variables.join("")).then(() => {
+                print(`Success: to "${configData.less}".`);
+            }, error => {
+                print(error);
             });
-        }, (error: Error) => {
-            print(error);
-        });
+        }
+
+        if (configData.scss) {
+            const variables: string[] = [];
+            for (const key in newFileNames) {
+                if (isImage(key)) {
+                    variables.push(`$${key}: '${newFileNames[key]}';\n`);
+                }
+            }
+
+            writeFileAsync(configData.scss, variables.join("")).then(() => {
+                print(`Success: to "${configData.scss}".`);
+            }, error => {
+                print(error);
+            });
+        }
+
+        if (configData.fileSize && typeof configData.fileSize === "string") {
+            writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  ")).then(() => {
+                print(`Success: to "${configData.fileSize}".`);
+            }, error => {
+                print(error);
+            });
+        }
     }
 }
 
@@ -312,15 +264,15 @@ type ConfigData = {
     inputFiles: string[];
     excludeFiles: string[];
     revisedFiles?: string[];
-    outputFiles: string[] | ((file: string) => string);
-    json?: boolean | string;
+    outputFiles: ((file: string) => string);
+    json?: string;
     ejsOptions?: ejs.Options;
     sha?: 256 | 384 | 512;
     customNewFileName?: CustomNewFileName;
     customOldFileName?: CustomOldFileName;
-    es6?: boolean | string;
-    less?: boolean | string;
-    scss?: boolean | string;
+    es6?: string;
+    less?: string;
+    scss?: string;
     base?: string;
     fileSize?: string;
 };

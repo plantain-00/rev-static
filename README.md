@@ -55,9 +55,9 @@ key | type | use case | description
 `inputFiles` | `string[]` | `demo/index.js` | the js, css, html and image file paths, can be glob
 `excludeFiles` | `string[]?` | `node_modules/foo/bar.js` | the files will be excluded, can be glob
 `revisedFiles` | `string[]?` | `demo/foo-caa02eaf68e9a.js` | the files will be regarded as revised files, can be glob
-`outputFiles` | `string[]` or `(file: string) => string` | `demo/index.ejs.html`->`demo/index.html` | the output files or output mapping function
+`outputFiles` | `(file: string) => string` | `demo/index.ejs.html`->`demo/index.html` | the output files mapping function
 `ejsOptions` | `EjsOption` | rm whitespace | the options to ejs
-`sha` | `256` or `384` or `512` | subresource integrity | the sha type for subresource integrity
+`sha` | `256` or `384` or `512` or `undefined` | subresource integrity | the sha type for subresource integrity
 `customNewFileName` | `(filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string` | `demo/index.js`->`demo/index-caa02eaf68e9a.js` | the rule of generated js, css, image file
 `customOldFileName` | `(filePath: string, baseName: string, extensionName: string) => string` | `demo/index-caa02eaf68e9a.js`->`{ demoIndexJs: demo/index-caa02eaf68e9a.js }` | the rule to get revised file's key
 `json` | `string?` | | generate json file for other use
@@ -100,6 +100,7 @@ check `scripts` part in `package.json` file, then run `npm run [a script name]`.
 + `noOutputFiles` removed
 + `Usage from nodejs` removed
 + All cli command except `-v`, `--version`, `--config` removed, in favor of config file
++ the `outputFiles` cannot be `string[]` any more
 
 #### v2
 
