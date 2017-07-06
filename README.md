@@ -56,28 +56,9 @@ becomes:
 ## cli help
 
 ```text
-Syntax:            rev-static [options] [file ...]
-Examples:
-   rev-static foo.js bar.ejs.html -o bar.html
-   rev-static foo.js bar.css baz.ejs.html -o baz.html
-   rev-static foo.js bar.css baz.ejs.html qux.ejs.html -o baz.html,qux.html
-   rev-static foo.js bar.css -j version.json
-   rev-static foo.js bar.ejs.html -o bar.html -- --rmWhitespace
-   rev-static *.js bar.ejs.html -o bar.html
-   rev-static --config rev-static.debug.js
-   rev-static init
-Options:
-  -o, --out [files]    output html files, seperated by ',' if there are more than 1 file.
-  -h, --help           print this message.
-  -j, --json [file]    output the variables in a json file, can be used by back-end templates.
-  -v, --version        print the tool's version.
-  -- [ejsOptions]      set the ejs' options, eg, `delimiter` or `rmWhitespace`.
-  --sha [type]         calculate sha of files, type can be `256`, `384` or `512`.
-  --config [file]      set the configuration file path, the default configuration file path is 'rev-static.config.js'.
-  --e, --es6 [file]    output the variables in a es6 file.
-  --l, --less [file]   output the variables in a less file.
-  --s, --scss [file]   output the variables in a scss file.
-  --base [path]        base path.
+rev-static --config rev-static.debug.js
+rev-static -v
+rev-static --version
 ```
 
 ## develop
@@ -90,6 +71,7 @@ check `scripts` part in `package.json` file, then run `npm run [a script name]`.
 
 + `noOutputFiles` removed
 + `Usage from nodejs` removed
++ All cli command except `-v`, `--version`, `--config` removed
 
 #### v2
 
