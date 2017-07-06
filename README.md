@@ -80,19 +80,16 @@ Options:
   --base [path]        base path.
 ```
 
-## usage from nodejs
-
-```js
-var rev = require("rev-static");
-rev.revisionCssJs(["foo.js", "bar.css"]).then(variables => {
-    rev.revisionHtml(["baz.ejs.html", "qux.ejs.html"], ["baz.html", "qux.html"], variables);
-});
-```
 ## develop
 
 check `scripts` part in `package.json` file, then run `npm run [a script name]`.
 
 ## change logs
+
+#### v3
+
++ `noOutputFiles` removed
++ `Usage from nodejs` removed
 
 #### v2
 

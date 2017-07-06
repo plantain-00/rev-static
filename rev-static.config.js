@@ -7,6 +7,7 @@ module.exports = [
       'demo/*.ejs.html'
     ],
     excludeFiles: [
+      'demo/bar2.css'
     ],
     revisedFiles: [
       'demo/foo2-*.js'
