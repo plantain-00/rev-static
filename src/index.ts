@@ -91,10 +91,11 @@ function getNewFileName(fileString: string, filePath: string, customNewFileName?
 function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName) {
     const extensionName = path.extname(filePath);
     const baseName = path.basename(filePath, extensionName);
+    const dirname = path.dirname(filePath);
     if (customOldFileName) {
-        return customOldFileName(filePath, baseName, extensionName);
+        return path.resolve(dirname, customOldFileName(filePath, baseName, extensionName));
     } else {
-        return baseName.split("-")[0] + extensionName;
+        return path.resolve(dirname, baseName.split("-")[0] + extensionName);
     }
 }
 
@@ -110,7 +111,7 @@ function revisionCssJs(inputFiles: string[], configData: ConfigData) {
             && configData.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
             const oldFileName = getOldFileName(filePath, configData.customOldFileName);
             variableName = getVariableName(configData.base ? path.relative(configData.base, oldFileName) : oldFileName);
-            newFileName = configData.base ? path.relative(configData.base, filePath) : filePath;
+            newFileName = path.basename(filePath);
         } else {
             variableName = getVariableName(configData.base ? path.relative(configData.base, filePath) : filePath);
             fileSizes[variableName] = prettyBytes(fileString.length);
