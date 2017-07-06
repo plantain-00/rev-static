@@ -16,9 +16,6 @@ module.exports = [
     },
     sha: 256,
     customNewFileName: (filePath, fileString, md5String, baseName, extensionName) => baseName + '-' + md5String + extensionName,
-    noOutputFiles: [
-      'demo/worker.js'
-    ],
     es6: 'demo/variables.ts',
     less: 'demo/variables.less',
     scss: 'demo/variables.scss',

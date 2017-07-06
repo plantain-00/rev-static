@@ -49,9 +49,6 @@ const defaultConfigContent = `module.exports = [
     },
     sha: 256,
     customNewFileName: (filePath, fileString, md5String, baseName, extensionName) => baseName + '-' + md5String + extensionName,
-    noOutputFiles: [
-      'demo/worker.js'
-    ],
     es6: 'demo/variables.ts',
     less: 'demo/variables.less',
     scss: 'demo/variables.scss'
@@ -130,7 +127,6 @@ export type CustomNewFileName = (filePath: string, fileString: string, md5String
 export type Options = {
     customNewFileName?: CustomNewFileName;
     shaType?: 256 | 384 | 512 | undefined;
-    noOutputFiles?: string[];
     base?: string;
 };
 
@@ -160,7 +156,7 @@ export function revisionCssJs(inputFiles: string[], options?: Options) {
         const fileString = fs.readFileSync(filePath).toString();
         fileSizes[variableName] = prettyBytes(fileString.length);
         const newFileName = getNewFileName(fileString, filePath, options ? options.customNewFileName : undefined);
-        if (!options || !options.noOutputFiles || options.noOutputFiles.indexOf(filePath) === -1) {
+        if (!options) {
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
         }
         variables[variableName] = newFileName;
@@ -230,19 +226,7 @@ export function executeCommandLine() {
     let configDatas: ConfigData[];
     try {
         const configData: ConfigData | ConfigData[] = require(configPath);
-        if (Array.isArray(configData)) {
-            for (const data of configData) {
-                if (data && data.noOutputFiles && data.inputFiles) {
-                    data.inputFiles.push(...data.noOutputFiles);
-                }
-            }
-            configDatas = configData;
-        } else {
-            if (configData && configData.noOutputFiles && configData.inputFiles) {
-                configData.inputFiles.push(...configData.noOutputFiles);
-            }
-            configDatas = [configData];
-        }
+        configDatas = Array.isArray(configData) ? configData : [configData];
     } catch (error) {
         print(error);
         const outFilesString: string = argv.o || argv.out;
@@ -324,7 +308,6 @@ export function executeCommandLine() {
             const { variables: newFileNames, fileSizes } = revisionCssJs(jsCssInputFiles, {
                 shaType: configData.sha,
                 customNewFileName: configData.customNewFileName,
-                noOutputFiles: configData.noOutputFiles,
                 base: configData.base,
             });
             print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
@@ -414,7 +397,6 @@ type ConfigData = {
     ejsOptions?: ejs.Options;
     sha?: 256 | 384 | 512;
     customNewFileName?: CustomNewFileName;
-    noOutputFiles?: string[];
     es6?: boolean | string;
     less?: boolean | string;
     scss?: boolean | string;
