@@ -93,9 +93,9 @@ function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName)
     const baseName = path.basename(filePath, extensionName);
     const dirname = path.dirname(filePath);
     if (customOldFileName) {
-        return path.resolve(dirname, customOldFileName(filePath, baseName, extensionName));
+        return path.relative(".", path.resolve(dirname, customOldFileName(filePath, baseName, extensionName)));
     } else {
-        return path.resolve(dirname, baseName.split("-")[0] + extensionName);
+        return path.relative(".", path.resolve(dirname, baseName.split("-")[0] + extensionName));
     }
 }
 
