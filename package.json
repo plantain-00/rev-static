@@ -36,6 +36,7 @@
     "@types/jasmine": "2.5.53",
     "@types/minimatch": "2.0.29",
     "@types/minimist": "1.2.0",
+    "@types/pretty-bytes": "4.0.0",
     "jasmine": "2.6.0",
     "rimraf": "2.6.1",
     "standard": "10.0.2",
