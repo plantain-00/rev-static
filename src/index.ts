@@ -10,6 +10,7 @@ import * as uniq from "lodash.uniq";
 import * as prettyBytes from "pretty-bytes";
 import * as minimatch from "minimatch";
 import exit = require("exit");
+import * as gzipSize from "gzip-size";
 import * as packageJson from "../package.json";
 
 function md5(str: string): string {
@@ -117,7 +118,7 @@ function revisionCssJs(inputFiles: string[], configData: ConfigData) {
             newFileName = getNewFileName(fileString, filePath, configData.customNewFileName);
             fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
         }
-        fileSizes[variableName] = prettyBytes(fileString.length);
+        fileSizes[variableName] = prettyBytes(fileString.length) + " " + prettyBytes(gzipSize.sync(fileString));
         variables[variableName] = newFileName;
         if (configData.sha) {
             variables.sri[variableName] = `sha${configData.sha}-` + calculateSha(fileString, configData.sha);

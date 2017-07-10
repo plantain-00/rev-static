@@ -11,3 +11,13 @@ declare module "lodash.uniq" {
 declare module "*.json" {
     export const version: string;
 }
+declare module "gzip-size" {
+    function gzipSize(input: string | Buffer, callback: (error: Error, size: number) => void): string;
+    export function sync(input: string | Buffer): number;
+    export function stream(): any;
+    export = gzipSize;
+    namespace gzipSize {
+        export function sync(input: string | Buffer): number;
+        export function stream(): any;
+    }
+}
