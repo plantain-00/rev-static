@@ -108,21 +108,18 @@ function revisionCssJs(inputFiles: string[], configData: ConfigData) {
         const fileString = fs.readFileSync(filePath).toString();
         let variableName: string;
         let newFileName: string | undefined;
+        const isInlined = configData.inlinedFiles && configData.inlinedFiles.some(inlinedFile => minimatch(filePath, inlinedFile));
         if (configData.revisedFiles
             && configData.revisedFiles.length > 0
             && configData.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
             const oldFileName = getOldFileName(filePath, configData.customOldFileName);
             variableName = getVariableName(configData.base ? path.relative(configData.base, oldFileName) : oldFileName);
-            newFileName = path.basename(filePath);
+            if (!isInlined) {
+                newFileName = path.basename(filePath);
+            }
         } else {
             variableName = getVariableName(configData.base ? path.relative(configData.base, filePath) : filePath);
-            if (configData.inlinedFiles && configData.inlinedFiles.some(inlinedFile => minimatch(filePath, inlinedFile))) {
-                if (filePath.endsWith(".js")) {
-                    inlineVariables[variableName] = `<script>\n${fileString}\n</script>\n`;
-                } else if (filePath.endsWith(".css")) {
-                    inlineVariables[variableName] = `<style>\n${fileString}\n</style>\n`;
-                }
-            } else {
+            if (!isInlined) {
                 newFileName = getNewFileName(fileString, filePath, configData.customNewFileName);
                 fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
             }
@@ -133,6 +130,13 @@ function revisionCssJs(inputFiles: string[], configData: ConfigData) {
         }
         if (configData.sha) {
             sriVariables[variableName] = `sha${configData.sha}-` + calculateSha(fileString, configData.sha);
+        }
+        if (isInlined) {
+            if (filePath.endsWith(".js")) {
+                inlineVariables[variableName] = `<script>\n${fileString}\n</script>\n`;
+            } else if (filePath.endsWith(".css")) {
+                inlineVariables[variableName] = `<style>\n${fileString}\n</style>\n`;
+            }
         }
     }
     return { variables, sriVariables, fileSizes, inlineVariables };
