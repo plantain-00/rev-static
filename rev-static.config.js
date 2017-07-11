@@ -7,10 +7,14 @@ module.exports = [
       'demo/*.ejs.html'
     ],
     excludeFiles: [
-      'demo/bar2.css'
+      'demo/movie.css'
     ],
     revisedFiles: [
-      'demo/foo2-*.js'
+      'demo/movie-*.js'
+    ],
+    inlinedFiles: [
+      'demo/shop.js',
+      'demo/shop.css'
     ],
     outputFiles: file => file.replace('.ejs', ''),
     ejsOptions: {

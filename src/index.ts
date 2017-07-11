@@ -9,7 +9,6 @@ import * as flatten from "lodash.flatten";
 import * as uniq from "lodash.uniq";
 import * as prettyBytes from "pretty-bytes";
 import * as minimatch from "minimatch";
-import exit = require("exit");
 import * as gzipSize from "gzip-size";
 import * as packageJson from "../package.json";
 
@@ -101,12 +100,14 @@ function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName)
 }
 
 function revisionCssJs(inputFiles: string[], configData: ConfigData) {
-    const variables = (configData.sha ? { sri: {} } : {}) as { sri: { [name: string]: string } } & { [name: string]: string };
+    const variables: { [name: string]: string } = {};
+    const sriVariables: { [name: string]: string } = {};
     const fileSizes: { [name: string]: string } = {};
+    const inlineVariables: { [name: string]: string } = {};
     for (const filePath of inputFiles) {
         const fileString = fs.readFileSync(filePath).toString();
         let variableName: string;
-        let newFileName: string;
+        let newFileName: string | undefined;
         if (configData.revisedFiles
             && configData.revisedFiles.length > 0
             && configData.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
@@ -115,19 +116,29 @@ function revisionCssJs(inputFiles: string[], configData: ConfigData) {
             newFileName = path.basename(filePath);
         } else {
             variableName = getVariableName(configData.base ? path.relative(configData.base, filePath) : filePath);
-            newFileName = getNewFileName(fileString, filePath, configData.customNewFileName);
-            fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
+            if (configData.inlinedFiles && configData.inlinedFiles.some(inlinedFile => minimatch(filePath, inlinedFile))) {
+                if (filePath.endsWith(".js")) {
+                    inlineVariables[variableName] = `<script>\n${fileString}\n</script>\n`;
+                } else if (filePath.endsWith(".css")) {
+                    inlineVariables[variableName] = `<style>\n${fileString}\n</style>\n`;
+                }
+            } else {
+                newFileName = getNewFileName(fileString, filePath, configData.customNewFileName);
+                fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
+            }
         }
         fileSizes[variableName] = prettyBytes(fileString.length) + " " + prettyBytes(gzipSize.sync(fileString));
-        variables[variableName] = newFileName;
+        if (newFileName) {
+            variables[variableName] = newFileName;
+        }
         if (configData.sha) {
-            variables.sri[variableName] = `sha${configData.sha}-` + calculateSha(fileString, configData.sha);
+            sriVariables[variableName] = `sha${configData.sha}-` + calculateSha(fileString, configData.sha);
         }
     }
-    return { variables, fileSizes };
+    return { variables, sriVariables, fileSizes, inlineVariables };
 }
 
-async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], newFileNames: { [name: string]: string }, configData: ConfigData) {
+async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], newFileNames: { [name: string]: any }, configData: ConfigData, fileSizes: { [name: string]: string }) {
     const ejsOptions = configData.ejsOptions ? configData.ejsOptions : {};
     for (let i = 0; i < htmlInputFiles.length; i++) {
         const fileString = await renderEjsAsync(htmlInputFiles[i], newFileNames, ejsOptions);
@@ -135,13 +146,12 @@ async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[],
         print(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
 
         const variableName = getVariableName(htmlOutputFiles[i]);
-        const newFileName = getNewFileName(fileString, htmlOutputFiles[i], configData.customNewFileName);
-        newFileNames[variableName] = newFileName;
+        fileSizes[variableName] = prettyBytes(fileString.length) + " " + prettyBytes(gzipSize.sync(fileString));
     }
 }
 
 function isImage(key: string) {
-    return key !== "sri" && !key.endsWith("Js") && !key.endsWith("Html") && !key.endsWith("Css");
+    return key !== "sri" && key !== "inline" && !key.endsWith("Js") && !key.endsWith("Html") && !key.endsWith("Css");
 }
 
 export async function executeCommandLine() {
@@ -191,10 +201,10 @@ export async function executeCommandLine() {
 
             const htmlOutputFiles = htmlInputFiles.map(file => configData.outputFiles(file));
 
-            const { variables: newFileNames, fileSizes } = revisionCssJs(jsCssInputFiles, configData);
+            const { variables: newFileNames, sriVariables, fileSizes, inlineVariables } = revisionCssJs(jsCssInputFiles, configData);
             print(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
-
-            await revisionHtml(htmlInputFiles, htmlOutputFiles, newFileNames, configData);
+            // tslint:disable-next-line:prefer-object-spread
+            await revisionHtml(htmlInputFiles, htmlOutputFiles, Object.assign({ inline: inlineVariables }, { sri: sriVariables }, newFileNames), configData, fileSizes);
 
             if (configData.json) {
                 await writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  "));
@@ -244,7 +254,7 @@ export async function executeCommandLine() {
         }
     } catch (error) {
         print(error);
-        exit(1);
+        process.exit(1);
     }
 }
 
@@ -252,6 +262,7 @@ type ConfigData = {
     inputFiles: string[];
     excludeFiles: string[];
     revisedFiles?: string[];
+    inlinedFiles?: string[];
     outputFiles: ((file: string) => string);
     json?: string;
     ejsOptions?: ejs.Options;

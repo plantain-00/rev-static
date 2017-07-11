@@ -36,6 +36,8 @@ becomes:
 
 `rev-static --config rev-static.debug.js`
 
+#### inline small js or css file
+
 ## install
 
 `npm i rev-static -g`
@@ -55,6 +57,7 @@ key | type | use case | description
 `inputFiles` | `string[]` | `demo/index.js` | the js, css, html and image file paths, can be glob
 `excludeFiles` | `string[]?` | `node_modules/foo/bar.js` | the files will be excluded, can be glob
 `revisedFiles` | `string[]?` | `demo/foo-caa02eaf68e9a.js` | the files will be regarded as revised files, can be glob
+`inlinedFiles` | `string[]?` | `demo/index.css` | the files will be inlined to html files, can be glob
 `outputFiles` | `(file: string) => string` | `demo/index.ejs.html`->`demo/index.html` | the output files mapping function
 `ejsOptions` | `EjsOption` | rm whitespace | the options to ejs
 `sha` | `256` or `384` or `512` or `undefined` | subresource integrity | the sha type for subresource integrity

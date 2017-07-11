@@ -35,17 +35,14 @@ jspm_packages
 
 # Optional REPL history
 .node_repl_history
+
+# Custom
 .vscode
-bar-*.css
-foo-*.js
-test-*.png
-baz.html
-qux.html
-qux.ejs2.html
-baz.ejs2.html
 dist/
-variables.json
-variables.ts
-variables.less
-variables.scss
-file-size.json
+demo/book-*.*
+demo/shop-*.*
+demo/test-*.png
+demo/variables.*
+demo/index.html
+demo/home.html
+demo/file-size.json
