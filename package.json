@@ -1,6 +1,6 @@
 {
   "name": "rev-static",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "build": "rimraf dist && tsc -p src",
     "standard": "standard \"**/*.config.js\"",
     "fix": "standard --fix \"**/*.config.js\"",
-    "test": "tsc -p spec && jasmine"
+    "test": "tsc -p spec && jasmine",
+    "release": "clean-release"
   },
   "repository": {
     "type": "git",
@@ -36,6 +37,7 @@
     "@types/minimatch": "2.0.29",
     "@types/minimist": "1.2.0",
     "@types/pretty-bytes": "4.0.0",
+    "clean-release": "1.0.3",
     "jasmine": "2.6.0",
     "rimraf": "2.6.1",
     "standard": "10.0.2",
