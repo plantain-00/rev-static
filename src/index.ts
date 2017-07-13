@@ -188,7 +188,7 @@ export async function executeCommandLine() {
             const files = await Promise.all(configData.inputFiles.map(file => globAsync(file)));
             let uniqFiles = uniq(flatten(files));
             if (configData.excludeFiles) {
-                uniqFiles = uniqFiles.filter(file => configData.excludeFiles.every(excludeFile => !minimatch(file, excludeFile)));
+                uniqFiles = uniqFiles.filter(file => configData.excludeFiles && configData.excludeFiles.every(excludeFile => !minimatch(file, excludeFile)));
             }
 
             for (const file of uniqFiles) {
@@ -264,7 +264,7 @@ export async function executeCommandLine() {
 
 type ConfigData = {
     inputFiles: string[];
-    excludeFiles: string[];
+    excludeFiles?: string[];
     revisedFiles?: string[];
     inlinedFiles?: string[];
     outputFiles: ((file: string) => string);
