@@ -4,13 +4,12 @@
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/index.js",
   "scripts": {
-    "lint": "tslint \"src/index.ts\" && npm run standard",
     "demo-test": "rimraf demo/book-*.* demo/shop-*.* demo/test-*.png demo/variables.* demo/index.html demo/home.html demo/file-size.json && ./bin/rev-static",
-    "build": "rimraf dist && tsc -p src",
-    "standard": "standard \"**/*.config.js\"",
-    "fix": "standard --fix \"**/*.config.js\"",
-    "test": "tsc -p spec && jasmine",
-    "release": "clean-release"
+    "build": "clean-scripts build",
+    "lint": "clean-scripts lint",
+    "test": "clean-scripts test",
+    "fix": "clean-scripts fix",
+    "release": "clean-scripts release"
   },
   "repository": {
     "type": "git",
@@ -38,6 +37,7 @@
     "@types/minimist": "1.2.0",
     "@types/pretty-bytes": "4.0.0",
     "clean-release": "1.0.3",
+    "clean-scripts": "1.0.0",
     "jasmine": "2.6.0",
     "rimraf": "2.6.1",
     "standard": "10.0.2",
