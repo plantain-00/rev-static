@@ -45,9 +45,9 @@ function globAsync(pattern: string) {
     });
 }
 
-function renderEjsAsync(path: string, data: ejs.Data, opts: ejs.Options) {
+function renderEjsAsync(filePath: string, data: ejs.Data, opts: ejs.Options) {
     return new Promise<string>((resolve, reject) => {
-        ejs.renderFile(path, data, opts, (error, file) => {
+        ejs.renderFile(filePath, data, opts, (error, file) => {
             if (error) {
                 reject(error);
             } else {
