@@ -158,7 +158,7 @@ function isImage(key: string) {
     return key !== "sri" && key !== "inline" && !key.endsWith("Js") && !key.endsWith("Html") && !key.endsWith("Css");
 }
 
-export async function executeCommandLine() {
+async function executeCommandLine() {
     try {
         const argv = minimist(process.argv.slice(2), { "--": true });
 
