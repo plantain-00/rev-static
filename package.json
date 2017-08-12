@@ -32,6 +32,7 @@
     "@types/camelcase": "0.0.30",
     "@types/ejs": "2.3.33",
     "@types/glob": "5.0.30",
+    "@types/gzip-size": "3.0.0",
     "@types/jasmine": "2.5.53",
     "@types/minimatch": "2.0.29",
     "@types/minimist": "1.2.0",

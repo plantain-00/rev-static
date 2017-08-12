@@ -262,6 +262,8 @@ async function executeCommandLine() {
     }
 }
 
+executeCommandLine();
+
 type ConfigData = {
     inputFiles: string[];
     excludeFiles?: string[];

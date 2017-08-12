@@ -1,3 +1,2 @@
 #!/usr/bin/env node
-var rev = require('../dist/index.js')
-rev.executeCommandLine()
+require('../dist/index.js')
