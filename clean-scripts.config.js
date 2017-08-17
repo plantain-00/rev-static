@@ -13,6 +13,10 @@ module.exports = {
   test: [
     'tsc -p spec',
     'jasmine',
+    [
+      'rimraf demo/book-*.* demo/shop-*.* demo/test-*.png demo/variables.* demo/index.html demo/home.html demo/file-size.json',
+      'node dist/index.js'
+    ],
     () => new Promise((resolve, reject) => {
       childProcess.exec('git status -s', (error, stdout, stderr) => {
         if (error) {

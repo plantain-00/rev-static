@@ -39,10 +39,10 @@ jspm_packages
 # Custom
 .vscode
 dist/
-demo/book-*.*
-demo/shop-*.*
-demo/test-*.png
-demo/variables.*
-demo/index.html
-demo/home.html
-demo/file-size.json
+#demo/book-*.*
+#demo/shop-*.*
+#demo/test-*.png
+#demo/variables.*
+#demo/index.html
+#demo/home.html
+#demo/file-size.json
