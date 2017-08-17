@@ -7,7 +7,6 @@ script:
   - git checkout package-lock.json
   - npm run build
   - npm run lint
-  - npm run demo-test
 env:
   - CXX=g++-4.8
 addons:
