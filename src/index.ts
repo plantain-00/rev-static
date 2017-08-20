@@ -69,6 +69,26 @@ function writeFileAsync(filename: string, data: string) {
     });
 }
 
+function existsAsync(filename: string) {
+    return new Promise<boolean>((resolve, reject) => {
+        fs.exists(filename, exists => {
+            resolve(exists);
+        });
+    });
+}
+
+function readFileAsync(filename: string) {
+    return new Promise<string>((resolve, reject) => {
+        fs.readFile(filename, (error, data) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(data.toString());
+            }
+        });
+    });
+}
+
 function getVariableName(filePath: string) {
     return camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
 }
@@ -99,13 +119,13 @@ function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName)
     }
 }
 
-function revisionCssJs(inputFiles: string[], configData: ConfigData) {
+async function revisionCssJs(inputFiles: string[], configData: ConfigData) {
     const variables: { [name: string]: string } = {};
     const sriVariables: { [name: string]: string } = {};
     const fileSizes: { [name: string]: string } = {};
     const inlineVariables: { [name: string]: string } = {};
     for (const filePath of inputFiles) {
-        const fileString = fs.readFileSync(filePath).toString();
+        const fileString = await readFileAsync(filePath);
         let variableName: string;
         let newFileName: string | undefined;
         const isInlined = configData.inlinedFiles && configData.inlinedFiles.some(inlinedFile => minimatch(filePath, inlinedFile));
@@ -191,7 +211,7 @@ async function executeCommandLine() {
         }
 
         for (const file of uniqFiles) {
-            if (!fs.existsSync(file)) {
+            if (!await existsAsync(file)) {
                 throw new Error(`Error: file: "${file}" not exists.`);
             }
             const extensionName = path.extname(file);
@@ -204,7 +224,7 @@ async function executeCommandLine() {
 
         const htmlOutputFiles = htmlInputFiles.map(file => configData.outputFiles(file));
 
-        const { variables: newFileNames, sriVariables, fileSizes, inlineVariables } = revisionCssJs(jsCssInputFiles, configData);
+        const { variables: newFileNames, sriVariables, fileSizes, inlineVariables } = await revisionCssJs(jsCssInputFiles, configData);
         printInConsole(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
         // tslint:disable-next-line:prefer-object-spread
         await revisionHtml(htmlInputFiles, htmlOutputFiles, Object.assign({ inline: inlineVariables }, { sri: sriVariables }, newFileNames), configData, fileSizes);
