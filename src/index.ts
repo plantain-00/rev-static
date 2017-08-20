@@ -10,6 +10,7 @@ import uniq = require("lodash.uniq");
 import * as prettyBytes from "pretty-bytes";
 import * as minimatch from "minimatch";
 import * as gzipSize from "gzip-size";
+import * as chokidar from "chokidar";
 import * as packageJson from "../package.json";
 
 function md5(str: string): string {
@@ -69,18 +70,6 @@ function writeFileAsync(filename: string, data: string) {
     });
 }
 
-function readFileAsync(filename: string) {
-    return new Promise<string>((resolve, reject) => {
-        fs.readFile(filename, (error, data) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve(data.toString());
-            }
-        });
-    });
-}
-
 function getVariableName(filePath: string) {
     return camelcase(path.normalize(filePath).replace(/\\|\//g, "-"));
 }
@@ -111,53 +100,83 @@ function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName)
     }
 }
 
-async function revisionCssJs(inputFiles: string[], configData: ConfigData) {
-    const variables: { [name: string]: string } = {};
-    const sriVariables: { [name: string]: string } = {};
-    const fileSizes: { [name: string]: string } = {};
-    const inlineVariables: { [name: string]: string } = {};
-    for (const filePath of inputFiles) {
-        const fileString = await readFileAsync(filePath);
-        let variableName: string;
-        let newFileName: string | undefined;
-        const isInlined = configData.inlinedFiles && configData.inlinedFiles.some(inlinedFile => minimatch(filePath, inlinedFile));
-        if (configData.revisedFiles
-            && configData.revisedFiles.length > 0
-            && configData.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
-            const oldFileName = getOldFileName(filePath, configData.customOldFileName);
-            variableName = getVariableName(configData.base ? path.relative(configData.base, oldFileName) : oldFileName);
-            if (!isInlined) {
-                newFileName = path.basename(filePath);
+type Variable = {
+    name: string;
+    value: string | undefined;
+    file: string;
+    sri: string | undefined;
+    fileSize: string;
+    inline: string | undefined;
+};
+
+function revisionCssOrJs(filePath: string, configData: ConfigData) {
+    return new Promise<Variable>((resolve, reject) => {
+        fs.readFile(filePath, (error, data) => {
+            if (error) {
+                reject(error);
+            } else {
+                const fileString = data.toString();
+                let variableName: string;
+                let newFileName: string | undefined;
+                const isInlined = configData.inlinedFiles && configData.inlinedFiles.some(inlinedFile => minimatch(filePath, inlinedFile));
+                if (configData.revisedFiles
+                    && configData.revisedFiles.length > 0
+                    && configData.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
+                    const oldFileName = getOldFileName(filePath, configData.customOldFileName);
+                    variableName = getVariableName(configData.base ? path.relative(configData.base, oldFileName) : oldFileName);
+                    if (!isInlined) {
+                        newFileName = path.basename(filePath);
+                    }
+                } else {
+                    variableName = getVariableName(configData.base ? path.relative(configData.base, filePath) : filePath);
+                    if (!isInlined) {
+                        newFileName = getNewFileName(fileString, filePath, configData.customNewFileName);
+                        fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
+                    }
+                }
+                const variable: Variable = {
+                    name: variableName,
+                    value: newFileName,
+                    file: filePath,
+                    fileSize: prettyBytes(fileString.length) + " " + prettyBytes(gzipSize.sync(fileString)),
+                    sri: configData.sha ? `sha${configData.sha}-` + calculateSha(fileString, configData.sha) : undefined,
+                    inline: undefined,
+                };
+                if (isInlined) {
+                    if (filePath.endsWith(".js")) {
+                        variable.inline = `<script>\n${fileString}\n</script>\n`;
+                    } else if (filePath.endsWith(".css")) {
+                        variable.inline = `<style>\n${fileString}\n</style>\n`;
+                    }
+                }
+                resolve(variable);
             }
-        } else {
-            variableName = getVariableName(configData.base ? path.relative(configData.base, filePath) : filePath);
-            if (!isInlined) {
-                newFileName = getNewFileName(fileString, filePath, configData.customNewFileName);
-                fs.createReadStream(filePath).pipe(fs.createWriteStream(path.resolve(path.dirname(filePath), newFileName)));
-            }
-        }
-        fileSizes[variableName] = prettyBytes(fileString.length) + " " + prettyBytes(gzipSize.sync(fileString));
-        if (newFileName) {
-            variables[variableName] = newFileName;
-        }
-        if (configData.sha) {
-            sriVariables[variableName] = `sha${configData.sha}-` + calculateSha(fileString, configData.sha);
-        }
-        if (isInlined) {
-            if (filePath.endsWith(".js")) {
-                inlineVariables[variableName] = `<script>\n${fileString}\n</script>\n`;
-            } else if (filePath.endsWith(".css")) {
-                inlineVariables[variableName] = `<style>\n${fileString}\n</style>\n`;
-            }
-        }
-    }
-    return { variables, sriVariables, fileSizes, inlineVariables };
+        });
+    });
 }
 
-async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], newFileNames: { [name: string]: any }, configData: ConfigData, fileSizes: { [name: string]: string }) {
+async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], variables: Variable[], configData: ConfigData) {
+    const newFileNames: { [name: string]: string } = {};
+    const inlineVariables: { [name: string]: string } = {};
+    const sriVariables: { [name: string]: string } = {};
+    const fileSizes: { [name: string]: string } = {};
+    for (const variable of variables) {
+        if (variable.value) {
+            newFileNames[variable.name] = variable.value;
+        }
+        if (variable.inline) {
+            inlineVariables[variable.name] = variable.inline;
+        }
+        if (variable.sri) {
+            sriVariables[variable.name] = variable.sri;
+        }
+        fileSizes[variable.name] = variable.fileSize;
+    }
+    // tslint:disable-next-line:prefer-object-spread
+    const context = Object.assign({ inline: inlineVariables }, { sri: sriVariables }, newFileNames);
     const ejsOptions = configData.ejsOptions ? configData.ejsOptions : {};
     for (let i = 0; i < htmlInputFiles.length; i++) {
-        const fileString = await renderEjsAsync(htmlInputFiles[i], newFileNames, ejsOptions);
+        const fileString = await renderEjsAsync(htmlInputFiles[i], context, ejsOptions);
         await writeFileAsync(htmlOutputFiles[i], fileString);
         printInConsole(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
 
@@ -188,13 +207,12 @@ async function executeCommandLine() {
     const configFileData: ConfigData | ConfigData[] = require(configPath);
     const configDatas = Array.isArray(configFileData) ? configFileData : [configFileData];
 
+    const watchMode: boolean = argv.w || argv.watch;
+
     for (const configData of configDatas) {
         if (!configData.inputFiles || configData.inputFiles.length === 0) {
             throw new Error("Error: no input files.");
         }
-
-        const htmlInputFiles: string[] = [];
-        const jsCssInputFiles: string[] = [];
 
         const files = await Promise.all(configData.inputFiles.map(file => globAsync(file)));
         let uniqFiles = uniq(flatten(files));
@@ -202,67 +220,163 @@ async function executeCommandLine() {
             uniqFiles = uniqFiles.filter(file => configData.excludeFiles && configData.excludeFiles.every(excludeFile => !minimatch(file, excludeFile)));
         }
 
+        const htmlInputFiles: string[] = [];
+        const jsCssInputFiles: string[] = [];
+        const htmlOutputFiles: string[] = [];
+
         for (const file of uniqFiles) {
-            const extensionName = path.extname(file);
-            if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
+            if (isHtmlExtension(file)) {
                 htmlInputFiles.push(file);
+                htmlOutputFiles.push(configData.outputFiles(file));
             } else {
                 jsCssInputFiles.push(file);
             }
         }
 
-        const htmlOutputFiles = htmlInputFiles.map(file => configData.outputFiles(file));
-
-        const { variables: newFileNames, sriVariables, fileSizes, inlineVariables } = await revisionCssJs(jsCssInputFiles, configData);
-        printInConsole(`New File Names: ${JSON.stringify(newFileNames, null, "  ")}`);
-        // tslint:disable-next-line:prefer-object-spread
-        await revisionHtml(htmlInputFiles, htmlOutputFiles, Object.assign({ inline: inlineVariables }, { sri: sriVariables }, newFileNames), configData, fileSizes);
-
-        if (configData.json) {
-            await writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  "));
-            printInConsole(`Success: to "${configData.json}".`);
-        }
-
-        if (configData.es6) {
-            const variables: string[] = [];
-            for (const key in newFileNames) {
-                if (newFileNames.hasOwnProperty(key) && isImage(key)) {
-                    variables.push(`export const ${key} = "${newFileNames[key]}";\n`);
+        if (watchMode) {
+            const variables: Variable[] = [];
+            let count = 0;
+            chokidar.watch(configData.inputFiles).on("all", (type: string, file: string) => {
+                if (configData.excludeFiles
+                    && configData.excludeFiles.some(excludeFile => minimatch(file, excludeFile))) {
+                    return;
                 }
-            }
+                printInConsole(`Detecting ${type}: ${file}`);
+                if (type === "add" || type === "change") {
+                    if (isHtmlExtension(file)) {
+                        const index = htmlInputFiles.findIndex(f => f === file);
+                        if (index === -1) {
+                            htmlInputFiles.push(file);
+                            htmlOutputFiles.push(configData.outputFiles(file));
+                        } else {
+                            htmlInputFiles[index] = file;
+                            htmlOutputFiles[index] = configData.outputFiles(file);
+                        }
+                        count++;
+                        if (count > uniqFiles.length) {
+                            revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
+                        }
+                    } else {
+                        revisionCssOrJs(file, configData).then(variable => {
+                            const index = variables.findIndex(v => v.file === file);
+                            if (index === -1) {
+                                variables.push(variable);
+                            } else {
+                                const oldVariable = variables[index];
+                                if (oldVariable.value) {
+                                    fs.unlink(path.resolve(path.dirname(oldVariable.file), oldVariable.value), error => {
+                                        if (error) {
+                                            printInConsole(error);
+                                        }
+                                    });
+                                }
+                                variables[index] = variable;
+                            }
+                            count++;
 
-            await writeFileAsync(configData.es6, variables.join(""));
-            printInConsole(`Success: to "${configData.es6}".`);
-        }
-
-        if (configData.less) {
-            const variables: string[] = [];
-            for (const key in newFileNames) {
-                if (newFileNames.hasOwnProperty(key) && isImage(key)) {
-                    variables.push(`@${key}: '${newFileNames[key]}';\n`);
+                            if (count >= jsCssInputFiles.length) {
+                                Promise.all([
+                                    revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData),
+                                    writeVariables(configData, variables),
+                                ]);
+                            }
+                        });
+                    }
+                } else if (type === "unlink") {
+                    if (isHtmlExtension(file)) {
+                        const index = htmlInputFiles.findIndex(f => f === file);
+                        if (index !== -1) {
+                            htmlInputFiles.splice(index, 1);
+                            htmlOutputFiles.splice(index, 1);
+                            revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
+                        }
+                    } else {
+                        const index = variables.findIndex(v => v.file === file);
+                        if (index !== -1) {
+                            variables.splice(index, 1);
+                            revisionCssOrJs(file, configData).then(variable => {
+                                Promise.all([
+                                    revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData),
+                                    writeVariables(configData, variables),
+                                ]);
+                            });
+                        }
+                    }
                 }
+            });
+        } else if (uniqFiles.length > 0) {
+            const variables = await Promise.all(jsCssInputFiles.map(file => revisionCssOrJs(file, configData)));
+
+            await Promise.all([
+                revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData),
+                writeVariables(configData, variables),
+            ]);
+        }
+    }
+}
+
+function isHtmlExtension(file: string) {
+    return htmlExtensions.indexOf(path.extname(file).toLowerCase()) !== -1;
+}
+
+async function writeVariables(configData: ConfigData, variables: Variable[]) {
+    variables.sort((v1, v2) => v1.name.localeCompare(v2.name));
+
+    const newFileNames: { [name: string]: string } = {};
+    const fileSizes: { [name: string]: string } = {};
+    for (const variable of variables) {
+        if (variable.value) {
+            newFileNames[variable.name] = variable.value;
+        }
+        fileSizes[variable.name] = variable.fileSize;
+    }
+
+    if (configData.json) {
+        await writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  "));
+        printInConsole(`Success: to "${configData.json}".`);
+    } else {
+        printInConsole(`File Renamed To: ${JSON.stringify(newFileNames, null, "  ")}`);
+    }
+
+    if (configData.es6) {
+        const result: string[] = [];
+        for (const variable of variables) {
+            if (isImage(variable.name) && variable.value !== undefined) {
+                result.push(`export const ${variable.name} = "${variable.value}";\n`);
             }
-
-            await writeFileAsync(configData.less, variables.join(""));
-            printInConsole(`Success: to "${configData.less}".`);
         }
 
-        if (configData.scss) {
-            const variables: string[] = [];
-            for (const key in newFileNames) {
-                if (newFileNames.hasOwnProperty(key) && isImage(key)) {
-                    variables.push(`$${key}: '${newFileNames[key]}';\n`);
-                }
+        await writeFileAsync(configData.es6, result.join(""));
+        printInConsole(`Success: to "${configData.es6}".`);
+    }
+
+    if (configData.less) {
+        const result: string[] = [];
+        for (const variable of variables) {
+            if (isImage(variable.name) && variable.value !== undefined) {
+                result.push(`@${variable.name}: '${variable.value}';\n`);
             }
-
-            await writeFileAsync(configData.scss, variables.join(""));
-            printInConsole(`Success: to "${configData.scss}".`);
         }
 
-        if (configData.fileSize) {
-            await writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  "));
-            printInConsole(`Success: to "${configData.fileSize}".`);
+        await writeFileAsync(configData.less, result.join(""));
+        printInConsole(`Success: to "${configData.less}".`);
+    }
+
+    if (configData.scss) {
+        const result: string[] = [];
+        for (const variable of variables) {
+            if (isImage(variable.name) && variable.value !== undefined) {
+                result.push(`$${variable.name}: '${variable.value}';\n`);
+            }
         }
+
+        await writeFileAsync(configData.scss, result.join(""));
+        printInConsole(`Success: to "${configData.scss}".`);
+    }
+
+    if (configData.fileSize) {
+        await writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  "));
+        printInConsole(`Success: to "${configData.fileSize}".`);
     }
 }
 

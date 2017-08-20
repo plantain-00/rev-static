@@ -1,9 +1,12 @@
 module.exports = [
   {
     inputFiles: [
-      'demo/*.js',
-      'demo/*.css',
-      'demo/*.png',
+      'demo/book.js',
+      'demo/movie-42a7b8c.js',
+      'demo/shop.js',
+      'demo/book.css',
+      'demo/shop.css',
+      'demo/test.png',
       'demo/*.ejs.html'
     ],
     excludeFiles: [
