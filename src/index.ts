@@ -69,14 +69,6 @@ function writeFileAsync(filename: string, data: string) {
     });
 }
 
-function existsAsync(filename: string) {
-    return new Promise<boolean>((resolve, reject) => {
-        fs.exists(filename, exists => {
-            resolve(exists);
-        });
-    });
-}
-
 function readFileAsync(filename: string) {
     return new Promise<string>((resolve, reject) => {
         fs.readFile(filename, (error, data) => {
@@ -211,9 +203,6 @@ async function executeCommandLine() {
         }
 
         for (const file of uniqFiles) {
-            if (!await existsAsync(file)) {
-                throw new Error(`Error: file: "${file}" not exists.`);
-            }
             const extensionName = path.extname(file);
             if (htmlExtensions.indexOf(extensionName.toLowerCase()) !== -1) {
                 htmlInputFiles.push(file);
