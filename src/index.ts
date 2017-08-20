@@ -155,7 +155,9 @@ function revisionCssOrJs(filePath: string, configData: ConfigData) {
     });
 }
 
-async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], variables: Variable[], configData: ConfigData) {
+function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], variables: Variable[], configData: ConfigData) {
+    variables.sort((v1, v2) => v1.name.localeCompare(v2.name));
+
     const newFileNames: { [name: string]: string } = {};
     const inlineVariables: { [name: string]: string } = {};
     const sriVariables: { [name: string]: string } = {};
@@ -175,14 +177,23 @@ async function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[],
     // tslint:disable-next-line:prefer-object-spread
     const context = Object.assign({ inline: inlineVariables }, { sri: sriVariables }, newFileNames);
     const ejsOptions = configData.ejsOptions ? configData.ejsOptions : {};
-    for (let i = 0; i < htmlInputFiles.length; i++) {
-        const fileString = await renderEjsAsync(htmlInputFiles[i], context, ejsOptions);
-        await writeFileAsync(htmlOutputFiles[i], fileString);
-        printInConsole(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
+    Promise.all(htmlInputFiles.map(file => renderEjsAsync(file, context, ejsOptions))).then(fileStrings => {
+        for (let i = 0; i < fileStrings.length; i++) {
+            const fileString = fileStrings[i];
+            writeFileAsync(htmlOutputFiles[i], fileString).then(() => {
+                printInConsole(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
+            });
 
-        const variableName = getVariableName(htmlOutputFiles[i]);
-        fileSizes[variableName] = prettyBytes(fileString.length) + " " + prettyBytes(gzipSize.sync(fileString));
-    }
+            const variableName = getVariableName(htmlOutputFiles[i]);
+            fileSizes[variableName] = prettyBytes(fileString.length) + " " + prettyBytes(gzipSize.sync(fileString));
+        }
+
+        if (configData.fileSize) {
+            writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  ")).then(() => {
+                printInConsole(`Success: to "${configData.fileSize}".`);
+            });
+        }
+    });
 }
 
 function isImage(key: string) {
@@ -214,104 +225,104 @@ async function executeCommandLine() {
             throw new Error("Error: no input files.");
         }
 
-        const files = await Promise.all(configData.inputFiles.map(file => globAsync(file)));
-        let uniqFiles = uniq(flatten(files));
-        if (configData.excludeFiles) {
-            uniqFiles = uniqFiles.filter(file => configData.excludeFiles && configData.excludeFiles.every(excludeFile => !minimatch(file, excludeFile)));
-        }
-
-        const htmlInputFiles: string[] = [];
-        const jsCssInputFiles: string[] = [];
-        const htmlOutputFiles: string[] = [];
-
-        for (const file of uniqFiles) {
-            if (isHtmlExtension(file)) {
-                htmlInputFiles.push(file);
-                htmlOutputFiles.push(configData.outputFiles(file));
-            } else {
-                jsCssInputFiles.push(file);
+        Promise.all(configData.inputFiles.map(file => globAsync(file))).then(files => {
+            let uniqFiles = uniq(flatten(files));
+            if (configData.excludeFiles) {
+                uniqFiles = uniqFiles.filter(file => configData.excludeFiles && configData.excludeFiles.every(excludeFile => !minimatch(file, excludeFile)));
             }
-        }
 
-        if (watchMode) {
-            const variables: Variable[] = [];
-            let count = 0;
-            chokidar.watch(configData.inputFiles).on("all", (type: string, file: string) => {
-                if (configData.excludeFiles
-                    && configData.excludeFiles.some(excludeFile => minimatch(file, excludeFile))) {
-                    return;
+            const htmlInputFiles: string[] = [];
+            const jsCssInputFiles: string[] = [];
+            const htmlOutputFiles: string[] = [];
+
+            for (const file of uniqFiles) {
+                if (isHtmlExtension(file)) {
+                    htmlInputFiles.push(file);
+                    htmlOutputFiles.push(configData.outputFiles(file));
+                } else {
+                    jsCssInputFiles.push(file);
                 }
-                printInConsole(`Detecting ${type}: ${file}`);
-                if (type === "add" || type === "change") {
-                    if (isHtmlExtension(file)) {
-                        const index = htmlInputFiles.findIndex(f => f === file);
-                        if (index === -1) {
-                            htmlInputFiles.push(file);
-                            htmlOutputFiles.push(configData.outputFiles(file));
-                        } else {
-                            htmlInputFiles[index] = file;
-                            htmlOutputFiles[index] = configData.outputFiles(file);
-                        }
-                        count++;
-                        if (count > uniqFiles.length) {
-                            revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
-                        }
-                    } else {
-                        revisionCssOrJs(file, configData).then(variable => {
-                            const index = variables.findIndex(v => v.file === file);
+            }
+
+            if (watchMode) {
+                const variables: Variable[] = [];
+                let count = 0;
+                chokidar.watch(configData.inputFiles).on("all", (type: string, file: string) => {
+                    if (configData.excludeFiles
+                        && configData.excludeFiles.some(excludeFile => minimatch(file, excludeFile))) {
+                        return;
+                    }
+                    printInConsole(`Detecting ${type}: ${file}`);
+                    if (type === "add" || type === "change") {
+                        if (isHtmlExtension(file)) {
+                            const index = htmlInputFiles.findIndex(f => f === file);
                             if (index === -1) {
-                                variables.push(variable);
+                                htmlInputFiles.push(file);
+                                htmlOutputFiles.push(configData.outputFiles(file));
                             } else {
-                                const oldVariable = variables[index];
-                                if (oldVariable.value) {
-                                    fs.unlink(path.resolve(path.dirname(oldVariable.file), oldVariable.value), error => {
-                                        if (error) {
-                                            printInConsole(error);
-                                        }
-                                    });
-                                }
-                                variables[index] = variable;
+                                htmlInputFiles[index] = file;
+                                htmlOutputFiles[index] = configData.outputFiles(file);
                             }
                             count++;
-
-                            if (count >= jsCssInputFiles.length) {
-                                Promise.all([
-                                    revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData),
-                                    writeVariables(configData, variables),
-                                ]);
+                            if (count > uniqFiles.length) {
+                                revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
+                            } else if (count === uniqFiles.length) {
+                                revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
+                                writeVariables(configData, variables);
                             }
-                        });
-                    }
-                } else if (type === "unlink") {
-                    if (isHtmlExtension(file)) {
-                        const index = htmlInputFiles.findIndex(f => f === file);
-                        if (index !== -1) {
-                            htmlInputFiles.splice(index, 1);
-                            htmlOutputFiles.splice(index, 1);
-                            revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
-                        }
-                    } else {
-                        const index = variables.findIndex(v => v.file === file);
-                        if (index !== -1) {
-                            variables.splice(index, 1);
+                        } else {
                             revisionCssOrJs(file, configData).then(variable => {
-                                Promise.all([
-                                    revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData),
-                                    writeVariables(configData, variables),
-                                ]);
+                                const index = variables.findIndex(v => v.file === file);
+                                if (index === -1) {
+                                    variables.push(variable);
+                                } else {
+                                    const oldVariable = variables[index];
+                                    if (oldVariable.value && oldVariable.value !== variable.value) {
+                                        const oldFile = path.resolve(path.dirname(oldVariable.file), oldVariable.value);
+                                        printInConsole(`Removing ${oldFile}`);
+                                        fs.unlink(oldFile, error => {
+                                            if (error) {
+                                                printInConsole(error);
+                                            }
+                                        });
+                                    }
+                                    variables[index] = variable;
+                                }
+                                count++;
+
+                                if (count >= uniqFiles.length) {
+                                    revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
+                                    writeVariables(configData, variables);
+                                }
                             });
                         }
+                    } else if (type === "unlink") {
+                        if (isHtmlExtension(file)) {
+                            const index = htmlInputFiles.findIndex(f => f === file);
+                            if (index !== -1) {
+                                htmlInputFiles.splice(index, 1);
+                                htmlOutputFiles.splice(index, 1);
+                                revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
+                            }
+                        } else {
+                            const index = variables.findIndex(v => v.file === file);
+                            if (index !== -1) {
+                                variables.splice(index, 1);
+                                revisionCssOrJs(file, configData).then(variable => {
+                                    revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
+                                    writeVariables(configData, variables);
+                                });
+                            }
+                        }
                     }
-                }
-            });
-        } else if (uniqFiles.length > 0) {
-            const variables = await Promise.all(jsCssInputFiles.map(file => revisionCssOrJs(file, configData)));
-
-            await Promise.all([
-                revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData),
-                writeVariables(configData, variables),
-            ]);
-        }
+                });
+            } else if (uniqFiles.length > 0) {
+                Promise.all(jsCssInputFiles.map(file => revisionCssOrJs(file, configData))).then(variables => {
+                    revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData);
+                    writeVariables(configData, variables);
+                });
+            }
+        });
     }
 }
 
@@ -319,7 +330,7 @@ function isHtmlExtension(file: string) {
     return htmlExtensions.indexOf(path.extname(file).toLowerCase()) !== -1;
 }
 
-async function writeVariables(configData: ConfigData, variables: Variable[]) {
+function writeVariables(configData: ConfigData, variables: Variable[]) {
     variables.sort((v1, v2) => v1.name.localeCompare(v2.name));
 
     const newFileNames: { [name: string]: string } = {};
@@ -332,8 +343,9 @@ async function writeVariables(configData: ConfigData, variables: Variable[]) {
     }
 
     if (configData.json) {
-        await writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  "));
-        printInConsole(`Success: to "${configData.json}".`);
+        writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
+            printInConsole(`Success: to "${configData.json}".`);
+        });
     } else {
         printInConsole(`File Renamed To: ${JSON.stringify(newFileNames, null, "  ")}`);
     }
@@ -346,8 +358,9 @@ async function writeVariables(configData: ConfigData, variables: Variable[]) {
             }
         }
 
-        await writeFileAsync(configData.es6, result.join(""));
-        printInConsole(`Success: to "${configData.es6}".`);
+        writeFileAsync(configData.es6, result.join("")).then(() => {
+            printInConsole(`Success: to "${configData.es6}".`);
+        });
     }
 
     if (configData.less) {
@@ -358,8 +371,9 @@ async function writeVariables(configData: ConfigData, variables: Variable[]) {
             }
         }
 
-        await writeFileAsync(configData.less, result.join(""));
-        printInConsole(`Success: to "${configData.less}".`);
+        writeFileAsync(configData.less, result.join("")).then(() => {
+            printInConsole(`Success: to "${configData.less}".`);
+        });
     }
 
     if (configData.scss) {
@@ -370,13 +384,9 @@ async function writeVariables(configData: ConfigData, variables: Variable[]) {
             }
         }
 
-        await writeFileAsync(configData.scss, result.join(""));
-        printInConsole(`Success: to "${configData.scss}".`);
-    }
-
-    if (configData.fileSize) {
-        await writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  "));
-        printInConsole(`Success: to "${configData.fileSize}".`);
+        writeFileAsync(configData.scss, result.join("")).then(() => {
+            printInConsole(`Success: to "${configData.scss}".`);
+        });
     }
 }
 
