@@ -71,6 +71,7 @@ key | type | use case | description
 `scss` | `string?` | | generate es6 file for image resources
 `base` | `string?` | | for example, if no `base`, the key will be `demoFooJs` or `demoBarCss`, if the `base` is `demo`, the key will be `fooJs` or `barCss`
 `fileSize` | `string?` | | generate a json file to show the resource file size
+`context` | `any?` | | will be available when render html template, eg, `context: { foo: 1 }`, then `context.foo === 1`
 
 ## core structure
 

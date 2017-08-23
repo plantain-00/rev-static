@@ -175,7 +175,7 @@ function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], varia
         fileSizes[variable.name] = variable.fileSize;
     }
     // tslint:disable-next-line:prefer-object-spread
-    const context = Object.assign({ inline: inlineVariables }, { sri: sriVariables }, newFileNames);
+    const context = Object.assign({ inline: inlineVariables }, { sri: sriVariables }, newFileNames, { context: configData.context });
     const ejsOptions = configData.ejsOptions ? configData.ejsOptions : {};
     Promise.all(htmlInputFiles.map(file => renderEjsAsync(file, context, ejsOptions))).then(fileStrings => {
         for (let i = 0; i < fileStrings.length; i++) {
@@ -413,4 +413,5 @@ type ConfigData = {
     scss?: string;
     base?: string;
     fileSize?: string;
+    context?: any;
 };

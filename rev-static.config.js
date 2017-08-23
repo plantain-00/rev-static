@@ -31,6 +31,9 @@ module.exports = [
     less: 'demo/variables.less',
     scss: 'demo/variables.scss',
     base: 'demo',
-    fileSize: 'demo/file-size.json'
+    fileSize: 'demo/file-size.json',
+    context: {
+      foo: 'foo test'
+    }
   }
 ]
