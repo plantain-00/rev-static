@@ -46,3 +46,4 @@ dist/
 #demo/index.html
 #demo/home.html
 #demo/file-size.json
+spec/*.js
