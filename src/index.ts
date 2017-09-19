@@ -5,8 +5,6 @@ import * as minimist from "minimist";
 import * as camelcase from "camelcase";
 import * as path from "path";
 import * as glob from "glob";
-import flatten = require("lodash.flatten");
-import uniq = require("lodash.uniq");
 import * as prettyBytes from "pretty-bytes";
 import * as minimatch from "minimatch";
 import * as gzipSize from "gzip-size";
@@ -34,9 +32,9 @@ const defaultConfigName = "rev-static.config.js";
 
 const htmlExtensions = [".html", ".htm", ".ejs"];
 
-function globAsync(pattern: string) {
+function globAsync(pattern: string, ignore?: string | string[]) {
     return new Promise<string[]>((resolve, reject) => {
-        glob(pattern, (error, matches) => {
+        glob(pattern, { ignore }, (error, matches) => {
             if (error) {
                 reject(error);
             } else {
@@ -225,12 +223,7 @@ async function executeCommandLine() {
             throw new Error("Error: no input files.");
         }
 
-        Promise.all(configData.inputFiles.map(file => globAsync(file))).then(files => {
-            let uniqFiles = uniq(flatten(files));
-            if (configData.excludeFiles) {
-                uniqFiles = uniqFiles.filter(file => configData.excludeFiles && configData.excludeFiles.every(excludeFile => !minimatch(file, excludeFile)));
-            }
-
+        globAsync(configData.inputFiles.length === 1 ? configData.inputFiles[0] : `{${configData.inputFiles.join(",")}}`, configData.excludeFiles).then(uniqFiles => {
             const htmlInputFiles: string[] = [];
             const jsCssInputFiles: string[] = [];
             const htmlOutputFiles: string[] = [];
@@ -247,11 +240,7 @@ async function executeCommandLine() {
             if (watchMode) {
                 const variables: Variable[] = [];
                 let count = 0;
-                chokidar.watch(configData.inputFiles).on("all", (type: string, file: string) => {
-                    if (configData.excludeFiles
-                        && configData.excludeFiles.some(excludeFile => minimatch(file, excludeFile))) {
-                        return;
-                    }
+                chokidar.watch(configData.inputFiles, { ignored: configData.excludeFiles }).on("all", (type: string, file: string) => {
                     printInConsole(`Detecting ${type}: ${file}`);
                     if (type === "add" || type === "change") {
                         if (isHtmlExtension(file)) {
