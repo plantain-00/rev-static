@@ -33,7 +33,7 @@
     "@types/camelcase": "4.1.0",
     "@types/chokidar": "1.7.3",
     "@types/ejs": "2.3.33",
-    "@types/glob": "5.0.32",
+    "@types/glob": "5.0.33",
     "@types/gzip-size": "3.0.0",
     "@types/jasmine": "2.6.0",
     "@types/minimatch": "3.0.1",

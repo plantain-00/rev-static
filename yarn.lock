@@ -16,9 +16,9 @@
   version "2.3.33"
   resolved "https://registry.yarnpkg.com/@types/ejs/-/ejs-2.3.33.tgz#0a4e0a7aeee09944154b06ce5a2ac6a118f92b00"
 
-"@types/glob@5.0.32":
-  version "5.0.32"
-  resolved "https://registry.yarnpkg.com/@types/glob/-/glob-5.0.32.tgz#aec5cfe987c72f099fdb1184452986aa506d5e8f"
+"@types/glob@5.0.33":
+  version "5.0.33"
+  resolved "https://registry.yarnpkg.com/@types/glob/-/glob-5.0.33.tgz#3dff7c6ce09d65abe919c7961dc3dee016f36ad7"
   dependencies:
     "@types/minimatch" "*"
     "@types/node" "*"
