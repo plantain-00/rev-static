@@ -6,7 +6,9 @@ const execAsync = util.promisify(childProcess.exec)
 module.exports = {
   build: [
     `rimraf dist/`,
-    `tsc -p src`
+    `tsc -p src`,
+    'rimraf demo/book-*.* demo/shop-*.* demo/test-*.png demo/variables.* demo/index.html demo/home.html demo/file-size.json',
+    'node dist/index.js'
   ],
   lint: {
     ts: `tslint "src/**/*.ts" "spec/*.ts"`,
@@ -16,10 +18,6 @@ module.exports = {
   test: [
     'tsc -p spec',
     'jasmine',
-    [
-      'rimraf demo/book-*.* demo/shop-*.* demo/test-*.png demo/variables.* demo/index.html demo/home.html demo/file-size.json',
-      'node dist/index.js'
-    ],
     async () => {
       const { stdout } = await execAsync('git status -s')
       if (stdout) {
