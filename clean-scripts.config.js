@@ -3,12 +3,15 @@ const { execAsync } = require('clean-scripts')
 const tsFiles = `"src/**/*.ts" "spec/**/*.ts"`
 const jsFiles = `"*.config.js"`
 
+const tscSrcCommand = `tsc -p src`
+const demoCommand = 'node dist/index.js'
+
 module.exports = {
   build: [
     `rimraf dist/`,
-    `tsc -p src`,
+    tscSrcCommand,
     'rimraf demo/book-*.* demo/shop-*.* demo/test-*.png demo/variables.* demo/index.html demo/home.html demo/file-size.json',
-    'node dist/index.js'
+    demoCommand
   ],
   lint: {
     ts: `tslint ${tsFiles}`,
@@ -31,5 +34,8 @@ module.exports = {
     js: `standard --fix ${jsFiles}`
   },
   release: `clean-release`,
-  watch: 'node dist/index.js --watch'
+  watch: {
+    src: `${tscSrcCommand} --watch`,
+    demo: '${demoCommand} --watch'
+  }
 }
