@@ -36,6 +36,6 @@ module.exports = {
   release: `clean-release`,
   watch: {
     src: `${tscSrcCommand} --watch`,
-    demo: '${demoCommand} --watch'
+    demo: `${demoCommand} --watch`
   }
 }
