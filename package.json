@@ -29,6 +29,8 @@
   },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
+    "@commitlint/cli": "5.0.1",
+    "@commitlint/config-angular": "5.0.1",
     "@types/camelcase": "4.1.0",
     "@types/chokidar": "1.7.3",
     "@types/ejs": "2.3.33",
