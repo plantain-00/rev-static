@@ -29,9 +29,9 @@
   dependencies:
     "@types/node" "*"
 
-"@types/jasmine@2.8.1":
-  version "2.8.1"
-  resolved "https://registry.yarnpkg.com/@types/jasmine/-/jasmine-2.8.1.tgz#57aaf1f94b9a9b4c1fc506dd757050e52b6df9ee"
+"@types/jasmine@2.8.2":
+  version "2.8.2"
+  resolved "https://registry.yarnpkg.com/@types/jasmine/-/jasmine-2.8.2.tgz#6ae4d8740c0da5d5a627df725b4eed71b8e36668"
 
 "@types/minimatch@*", "@types/minimatch@3.0.1":
   version "3.0.1"
@@ -42,8 +42,8 @@
   resolved "https://registry.yarnpkg.com/@types/minimist/-/minimist-1.2.0.tgz#69a23a3ad29caf0097f06eda59b361ee2f0639f6"
 
 "@types/node@*":
-  version "8.0.52"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.52.tgz#8e7f47747868e7687f2cd4922966e2d6af78d22d"
+  version "8.0.53"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.53.tgz#396b35af826fa66aad472c8cb7b8d5e277f4e6d8"
 
 "@types/pretty-bytes@4.0.0":
   version "4.0.0"
@@ -206,8 +206,8 @@ bcrypt-pbkdf@^1.0.0:
     tweetnacl "^0.14.3"
 
 binary-extensions@^1.0.0:
-  version "1.10.0"
-  resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-1.10.0.tgz#9aeb9a6c5e88638aad171e167f5900abe24835d0"
+  version "1.11.0"
+  resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-1.11.0.tgz#46aa1751fb6a2f93ee5e689bb1087d4b14c6c205"
 
 block-stream@*:
   version "0.0.9"
@@ -306,9 +306,9 @@ clean-release@1.3.5:
     rimraf "2.6.2"
     tmp "0.0.33"
 
-clean-scripts@1.6.0:
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/clean-scripts/-/clean-scripts-1.6.0.tgz#8df2f511a818fe4d9ab23c36a95463a441aefdfd"
+clean-scripts@1.7.0:
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/clean-scripts/-/clean-scripts-1.7.0.tgz#ce7d0bc9aa7a158cceddd84ea3679aa11cf76579"
   dependencies:
     minimist "1.2.0"
     pretty-ms "3.0.1"
@@ -1397,8 +1397,8 @@ mute-stream@0.0.5:
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.5.tgz#8fbfabb0a98a253d3184331f9e8deb7372fac6c0"
 
 nan@^2.3.0:
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.7.0.tgz#d95bf721ec877e08db276ed3fc6eb78f9083ad46"
+  version "2.8.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.8.0.tgz#ed715f3fe9de02b57a5e6252d90a96675e1f085a"
 
 natural-compare@^1.4.0:
   version "1.4.0"
@@ -1410,14 +1410,14 @@ nested-error-stacks@^2.0.0:
   dependencies:
     inherits "~2.0.1"
 
-no-unused-export@1.4.2:
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/no-unused-export/-/no-unused-export-1.4.2.tgz#f79cfcca9845c9f0c7178b88ae18a7b1a5cb9fed"
+no-unused-export@1.4.3:
+  version "1.4.3"
+  resolved "https://registry.yarnpkg.com/no-unused-export/-/no-unused-export-1.4.3.tgz#4828be3a292dcb4f368cf888983401eaf4f06e91"
   dependencies:
     glob "7.1.2"
     minimist "1.2.0"
     parse5 "3.0.3"
-    postcss-less "1.1.1"
+    postcss-less "1.1.3"
     postcss-scss "1.0.2"
     typescript "2.6.1"
 
@@ -1642,9 +1642,9 @@ pluralize@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/pluralize/-/pluralize-1.2.1.tgz#d1a21483fd22bb41e58a12fa3421823140897c45"
 
-postcss-less@1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/postcss-less/-/postcss-less-1.1.1.tgz#4bd240db517ce3407583d927858184f50045f4ab"
+postcss-less@1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/postcss-less/-/postcss-less-1.1.3.tgz#6930525271bfe38d5793d33ac09c1a546b87bb51"
   dependencies:
     postcss "^5.2.16"
 
