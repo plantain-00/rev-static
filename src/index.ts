@@ -19,13 +19,8 @@ function calculateSha(str: string, shaType: 256 | 384 | 512): string {
     return crypto.createHash(`sha${shaType}`).update(str).digest("base64");
 }
 
-function printInConsole(message: any) {
-    // tslint:disable-next-line:no-console
-    console.log(message);
-}
-
 function showToolVersion() {
-    printInConsole(`Version: ${packageJson.version}`);
+    console.log(`Version: ${packageJson.version}`);
 }
 
 const defaultConfigName = "rev-static.config.js";
@@ -179,7 +174,7 @@ function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], varia
         for (let i = 0; i < fileStrings.length; i++) {
             const fileString = fileStrings[i];
             writeFileAsync(htmlOutputFiles[i], fileString).then(() => {
-                printInConsole(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
+                console.log(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`);
             });
 
             const variableName = getVariableName(htmlOutputFiles[i]);
@@ -188,7 +183,7 @@ function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], varia
 
         if (configData.fileSize) {
             writeFileAsync(configData.fileSize, JSON.stringify(fileSizes, null, "  ")).then(() => {
-                printInConsole(`Success: to "${configData.fileSize}".`);
+                console.log(`Success: to "${configData.fileSize}".`);
             });
         }
     });
@@ -241,7 +236,7 @@ async function executeCommandLine() {
                 const variables: Variable[] = [];
                 let count = 0;
                 chokidar.watch(configData.inputFiles, { ignored: configData.excludeFiles }).on("all", (type: string, file: string) => {
-                    printInConsole(`Detecting ${type}: ${file}`);
+                    console.log(`Detecting ${type}: ${file}`);
                     if (type === "add" || type === "change") {
                         if (isHtmlExtension(file)) {
                             const index = htmlInputFiles.findIndex(f => f === file);
@@ -268,10 +263,10 @@ async function executeCommandLine() {
                                     const oldVariable = variables[index];
                                     if (oldVariable.value && oldVariable.value !== variable.value) {
                                         const oldFile = path.resolve(path.dirname(oldVariable.file), oldVariable.value);
-                                        printInConsole(`Removing ${oldFile}`);
+                                        console.log(`Removing ${oldFile}`);
                                         fs.unlink(oldFile, error => {
                                             if (error) {
-                                                printInConsole(error);
+                                                console.log(error);
                                             }
                                         });
                                     }
@@ -333,10 +328,10 @@ function writeVariables(configData: ConfigData, variables: Variable[]) {
 
     if (configData.json) {
         writeFileAsync(configData.json, JSON.stringify(newFileNames, null, "  ")).then(() => {
-            printInConsole(`Success: to "${configData.json}".`);
+            console.log(`Success: to "${configData.json}".`);
         });
     } else {
-        printInConsole(`File Renamed To: ${JSON.stringify(newFileNames, null, "  ")}`);
+        console.log(`File Renamed To: ${JSON.stringify(newFileNames, null, "  ")}`);
     }
 
     if (configData.es6) {
@@ -348,7 +343,7 @@ function writeVariables(configData: ConfigData, variables: Variable[]) {
         }
 
         writeFileAsync(configData.es6, result.join("")).then(() => {
-            printInConsole(`Success: to "${configData.es6}".`);
+            console.log(`Success: to "${configData.es6}".`);
         });
     }
 
@@ -361,7 +356,7 @@ function writeVariables(configData: ConfigData, variables: Variable[]) {
         }
 
         writeFileAsync(configData.less, result.join("")).then(() => {
-            printInConsole(`Success: to "${configData.less}".`);
+            console.log(`Success: to "${configData.less}".`);
         });
     }
 
@@ -374,15 +369,19 @@ function writeVariables(configData: ConfigData, variables: Variable[]) {
         }
 
         writeFileAsync(configData.scss, result.join("")).then(() => {
-            printInConsole(`Success: to "${configData.scss}".`);
+            console.log(`Success: to "${configData.scss}".`);
         });
     }
 }
 
 executeCommandLine().then(() => {
-    printInConsole("rev-static success.");
+    console.log("rev-static success.");
 }, error => {
-    printInConsole(error);
+    if (error instanceof Error) {
+        console.log(error.message);
+    } else {
+        console.log(error);
+    }
     process.exit(1);
 });
 
