@@ -1,3 +1,5 @@
+# rev-static
+
 [![Dependency Status](https://david-dm.org/plantain-00/rev-static.svg)](https://david-dm.org/plantain-00/rev-static)
 [![devDependency Status](https://david-dm.org/plantain-00/rev-static/dev-status.svg)](https://david-dm.org/plantain-00/rev-static#info=devDependencies)
 [![Build Status: Linux](https://travis-ci.org/plantain-00/rev-static.svg?branch=master)](https://travis-ci.org/plantain-00/rev-static)
@@ -7,7 +9,7 @@
 
 ## features
 
-#### add version in file name for css and js files
+### add version in file name for css and js files
 
 `index.js`
 
@@ -15,7 +17,7 @@ becomes:
 
 `index-caa02e8ba0c5af68e9ac7728da2bed75.js`
 
-#### change file name of css and js files in html files
+### change file name of css and js files in html files
 
 `<script src="index.js"></script>`
 
@@ -23,7 +25,7 @@ becomes:
 
 `<script src="index-caa02e8ba0c5af68e9ac7728da2bed75.js"></script>`
 
-#### calculate sha for css and js files, then add it in `integrity` property
+### calculate sha for css and js files, then add it in `integrity` property
 
 `<script src="index.js" crossOrigin="anonymous"></script>`
 
@@ -31,13 +33,13 @@ becomes:
 
 `<script src="index-caa02e8ba0c5af68e9ac7728da2bed75.js" crossOrigin="anonymous" integrity="sha256-cHLd68M3ekn8P2d8tYdJIV91nSbWrWsu02yI8MEVvYU="></script>`
 
-#### support glob
+### support glob
 
-#### support config file for options
+### support config file for options
 
 `rev-static --config rev-static.debug.js`
 
-#### inline small js or css file
+### inline small js or css file
 
 ## install
 
@@ -75,7 +77,7 @@ key | type | use case | description
 
 ## core structure
 
-```
+```json
 {
   "sri": {
     "fooJs": "sha256-+dZ6udsWxNVoGfScAq7t5IIF5UJb4F6RhjbN6oe1p4w=",
@@ -93,7 +95,7 @@ key | type | use case | description
 ## demo in this repository
 
 1. download or clone this repository
-2. run `rev-static`(the options is already in `rev-static.config.js`)
+1. run `rev-static`(the options is already in `rev-static.config.js`)
 
 ## develop
 
@@ -101,14 +103,14 @@ check `scripts` part in `package.json` file, then run `npm run [a script name]`.
 
 ## change logs
 
-#### v3
+### v3
 
 + `noOutputFiles` removed
 + `Usage from nodejs` removed
 + All cli command except `-v`, `--version`, `--config` removed, in favor of config file
 + the `outputFiles` cannot be `string[]` any more
 
-#### v2
+### v2
 
 ```js
 // before
