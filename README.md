@@ -43,7 +43,7 @@ becomes:
 
 ## install
 
-`npm i rev-static -g`
+`yarn global add rev-static`
 
 ## usage
 
