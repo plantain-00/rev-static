@@ -167,7 +167,6 @@ function revisionHtml (htmlInputFiles: string[], htmlOutputFiles: string[], vari
     }
     fileSizes[variable.name] = variable.fileSize
   }
-    // tslint:disable-next-line:prefer-object-spread
   const context = Object.assign({ inline: inlineVariables }, { sri: sriVariables }, newFileNames, { context: configData.context })
   const ejsOptions = configData.ejsOptions ? configData.ejsOptions : {}
   Promise.all(htmlInputFiles.map(file => renderEjsAsync(file, context, ejsOptions))).then(fileStrings => {
