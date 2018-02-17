@@ -47,11 +47,11 @@
     "standard": "10.0.3",
     "tslint": "5.9.1",
     "tslint-config-standard": "7.0.0",
-    "typescript": "2.7.1"
+    "typescript": "2.7.2"
   },
   "dependencies": {
     "camelcase": "4.1.0",
-    "chokidar": "2.0.1",
+    "chokidar": "2.0.2",
     "ejs": "2.5.7",
     "glob": "7.1.2",
     "gzip-size": "4.1.0",
