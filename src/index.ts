@@ -11,15 +11,15 @@ import * as gzipSize from 'gzip-size'
 import * as chokidar from 'chokidar'
 import * as packageJson from '../package.json'
 
-function md5 (str: string): string {
+function md5(str: string): string {
   return crypto.createHash('md5').update(str).digest('hex')
 }
 
-function calculateSha (str: string, shaType: 256 | 384 | 512): string {
+function calculateSha(str: string, shaType: 256 | 384 | 512): string {
   return crypto.createHash(`sha${shaType}`).update(str).digest('base64')
 }
 
-function showToolVersion () {
+function showToolVersion() {
   console.log(`Version: ${packageJson.version}`)
 }
 
@@ -27,7 +27,7 @@ const defaultConfigName = 'rev-static.config.js'
 
 const htmlExtensions = ['.html', '.htm', '.ejs']
 
-function globAsync (pattern: string, ignore?: string | string[]) {
+function globAsync(pattern: string, ignore?: string | string[]) {
   return new Promise<string[]>((resolve, reject) => {
     glob(pattern, { ignore }, (error, matches) => {
       if (error) {
@@ -39,7 +39,7 @@ function globAsync (pattern: string, ignore?: string | string[]) {
   })
 }
 
-function renderEjsAsync (filePath: string, data: ejs.Data, opts: ejs.Options) {
+function renderEjsAsync(filePath: string, data: ejs.Data, opts: ejs.Options) {
   return new Promise<string>((resolve, reject) => {
     ejs.renderFile(filePath, data, opts, (error, file) => {
       if (error) {
@@ -51,7 +51,7 @@ function renderEjsAsync (filePath: string, data: ejs.Data, opts: ejs.Options) {
   })
 }
 
-function writeFileAsync (filename: string, data: string) {
+function writeFileAsync(filename: string, data: string) {
   return new Promise<void>((resolve, reject) => {
     fs.writeFile(filename, data, error => {
       if (error) {
@@ -63,7 +63,7 @@ function writeFileAsync (filename: string, data: string) {
   })
 }
 
-function getVariableName (filePath: string) {
+function getVariableName(filePath: string) {
   return camelcase(path.normalize(filePath).replace(/\\|\//g, '-'))
 }
 
@@ -71,7 +71,7 @@ type CustomNewFileName = (filePath: string, fileString: string, md5String: strin
 
 type CustomOldFileName = (filePath: string, baseName: string, extensionName: string) => string
 
-function getNewFileName (fileString: string, filePath: string, customNewFileName?: CustomNewFileName) {
+function getNewFileName(fileString: string, filePath: string, customNewFileName?: CustomNewFileName) {
   const md5String = md5(fileString)
   const extensionName = path.extname(filePath)
   const baseName = path.basename(filePath, extensionName)
@@ -82,7 +82,7 @@ function getNewFileName (fileString: string, filePath: string, customNewFileName
   }
 }
 
-function getOldFileName (filePath: string, customOldFileName?: CustomOldFileName) {
+function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName) {
   const extensionName = path.extname(filePath)
   const baseName = path.basename(filePath, extensionName)
   const dirname = path.dirname(filePath)
@@ -102,7 +102,8 @@ type Variable = {
   inline: string | undefined;
 }
 
-function revisionCssOrJs (filePath: string, configData: ConfigData) {
+// tslint:disable-next-line:cognitive-complexity
+function revisionCssOrJs(filePath: string, configData: ConfigData) {
   return new Promise<Variable>((resolve, reject) => {
     fs.readFile(filePath, (error, data) => {
       if (error) {
@@ -113,8 +114,8 @@ function revisionCssOrJs (filePath: string, configData: ConfigData) {
         let newFileName: string | undefined
         const isInlined = configData.inlinedFiles && configData.inlinedFiles.some(inlinedFile => minimatch(filePath, inlinedFile))
         if (configData.revisedFiles
-                    && configData.revisedFiles.length > 0
-                    && configData.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
+          && configData.revisedFiles.length > 0
+          && configData.revisedFiles.some(revisedFile => minimatch(filePath, revisedFile))) {
           const oldFileName = getOldFileName(filePath, configData.customOldFileName)
           variableName = getVariableName(configData.base ? path.relative(configData.base, oldFileName) : oldFileName)
           if (!isInlined) {
@@ -148,7 +149,7 @@ function revisionCssOrJs (filePath: string, configData: ConfigData) {
   })
 }
 
-function revisionHtml (htmlInputFiles: string[], htmlOutputFiles: string[], variables: Variable[], configData: ConfigData) {
+function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], variables: Variable[], configData: ConfigData) {
   variables.sort((v1, v2) => v1.name.localeCompare(v2.name))
 
   const newFileNames: { [name: string]: string } = {}
@@ -188,11 +189,12 @@ function revisionHtml (htmlInputFiles: string[], htmlOutputFiles: string[], vari
   })
 }
 
-function isImage (key: string) {
+function isImage(key: string) {
   return key !== 'sri' && key !== 'inline' && !key.endsWith('Js') && !key.endsWith('Html') && !key.endsWith('Css')
 }
 
-async function executeCommandLine () {
+// tslint:disable-next-line:cognitive-complexity
+async function executeCommandLine() {
   const argv = minimist(process.argv.slice(2), { '--': true })
 
   const showVersion = argv.v || argv.version
@@ -309,11 +311,12 @@ async function executeCommandLine () {
   }
 }
 
-function isHtmlExtension (file: string) {
+function isHtmlExtension(file: string) {
   return htmlExtensions.indexOf(path.extname(file).toLowerCase()) !== -1
 }
 
-function writeVariables (configData: ConfigData, variables: Variable[]) {
+// tslint:disable-next-line:cognitive-complexity
+function writeVariables(configData: ConfigData, variables: Variable[]) {
   variables.sort((v1, v2) => v1.name.localeCompare(v2.name))
 
   const newFileNames: { [name: string]: string } = {}
