@@ -58,7 +58,7 @@
     "gzip-size": "4.1.0",
     "minimatch": "3.0.4",
     "minimist": "1.2.0",
-    "pretty-bytes": "4.0.2"
+    "pretty-bytes": "5.0.0"
   },
   "types": "./dist/index.d.ts",
   "bin": {
