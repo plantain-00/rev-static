@@ -41,7 +41,7 @@
     "@types/pretty-bytes": "5.1.0",
     "clean-release": "2.6.0",
     "clean-scripts": "1.9.2",
-    "jasmine": "3.1.0",
+    "jasmine": "3.2.0",
     "markdownlint-cli": "0.12.0",
     "no-unused-export": "1.6.0",
     "rimraf": "2.6.2",
