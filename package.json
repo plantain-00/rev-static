@@ -28,8 +28,8 @@
   },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
-    "@commitlint/cli": "7.1.1",
-    "@commitlint/config-conventional": "7.1.1",
+    "@commitlint/cli": "7.1.2",
+    "@commitlint/config-conventional": "7.1.2",
     "@types/camelcase": "4.1.0",
     "@types/chokidar": "1.7.5",
     "@types/ejs": "2.6.0",
@@ -47,7 +47,7 @@
     "rimraf": "2.6.2",
     "standard": "12.0.1",
     "tslint": "5.11.0",
-    "tslint-config-standard": "8.0.0",
+    "tslint-config-standard": "8.0.1",
     "tslint-sonarts": "1.7.0",
     "typescript": "3.0.1"
   },
