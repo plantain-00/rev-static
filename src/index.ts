@@ -95,11 +95,11 @@ function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName)
 
 type Variable = {
   name: string;
-  value: string | undefined;
+  value?: string;
   file: string;
-  sri: string | undefined;
+  sri?: string;
   fileSize: string;
-  inline: string | undefined;
+  inline?: string;
 }
 
 // tslint:disable-next-line:cognitive-complexity
