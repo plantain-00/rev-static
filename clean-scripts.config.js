@@ -19,7 +19,7 @@ module.exports = {
     export: `no-unused-export ${tsFiles}`,
     commit: `commitlint --from=HEAD~1`,
     markdown: `markdownlint README.md`,
-    typeCoverage: 'type-coverage -p src --at-least 98'
+    typeCoverage: 'type-coverage -p src'
   },
   test: [
     'tsc -p spec',

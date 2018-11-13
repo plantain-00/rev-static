@@ -26,6 +26,9 @@
   "bugs": {
     "url": "https://github.com/plantain-00/rev-static/issues"
   },
+  "typeCoverage": {
+    "atLeast": 98
+  },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
     "@commitlint/cli": "7.2.1",
