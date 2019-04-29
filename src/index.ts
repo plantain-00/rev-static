@@ -1,6 +1,6 @@
 import * as ejs from 'ejs'
 import * as fs from 'fs'
-import * as crypto from 'crypto'
+import { createHash } from 'crypto'
 import minimist from 'minimist'
 import camelcase from 'camelcase'
 import * as path from 'path'
@@ -12,11 +12,11 @@ import * as chokidar from 'chokidar'
 import * as packageJson from '../package.json'
 
 function md5(str: string): string {
-  return crypto.createHash('md5').update(str).digest('hex')
+  return createHash('md5').update(str).digest('hex')
 }
 
 function calculateSha(str: string, shaType: 256 | 384 | 512): string {
-  return crypto.createHash(`sha${shaType}`).update(str).digest('base64')
+  return createHash(`sha${shaType}`).update(str).digest('base64')
 }
 
 function showToolVersion() {
