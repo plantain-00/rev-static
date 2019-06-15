@@ -1,1 +1,1 @@
-export const testPng = "test-9d97966727a2d68e865bd7dcf26202df.png";
+export const testPng = "test-ff20c32b442ac41023bbfee22850e282.png";
