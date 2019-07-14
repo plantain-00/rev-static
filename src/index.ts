@@ -45,7 +45,7 @@ function renderEjsAsync(filePath: string, data: ejs.Data, opts: ejs.Options) {
       if (error) {
         reject(error)
       } else {
-        resolve(file!)
+        resolve(file)
       }
     })
   })
@@ -93,7 +93,7 @@ function getOldFileName(filePath: string, customOldFileName?: CustomOldFileName)
   }
 }
 
-type Variable = {
+interface Variable {
   name: string;
   value?: string;
   file: string;
@@ -102,7 +102,6 @@ type Variable = {
   inline?: string;
 }
 
-// tslint:disable-next-line:cognitive-complexity
 function revisionCssOrJs(filePath: string, configData: ConfigData) {
   return new Promise<Variable>((resolve, reject) => {
     fs.readFile(filePath, (error, data) => {
@@ -193,7 +192,6 @@ function isImage(key: string) {
   return key !== 'sri' && key !== 'inline' && !key.endsWith('Js') && !key.endsWith('Html') && !key.endsWith('Css')
 }
 
-// tslint:disable-next-line:cognitive-complexity
 async function executeCommandLine() {
   const argv = minimist(process.argv.slice(2), { '--': true })
 
@@ -209,6 +207,7 @@ async function executeCommandLine() {
   }
   const configPath = path.resolve(process.cwd(), config)
 
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const configFileData: ConfigData | ConfigData[] = require(configPath)
   const configDatas = Array.isArray(configFileData) ? configFileData : [configFileData]
 
@@ -219,95 +218,93 @@ async function executeCommandLine() {
       throw new Error('Error: no input files.')
     }
 
-    globAsync(configData.inputFiles.length === 1 ? configData.inputFiles[0] : `{${configData.inputFiles.join(',')}}`, configData.excludeFiles).then(uniqFiles => {
-      const htmlInputFiles: string[] = []
-      const jsCssInputFiles: string[] = []
-      const htmlOutputFiles: string[] = []
+    const uniqFiles = await globAsync(configData.inputFiles.length === 1 ? configData.inputFiles[0] : `{${configData.inputFiles.join(',')}}`, configData.excludeFiles)
+    const htmlInputFiles: string[] = []
+    const jsCssInputFiles: string[] = []
+    const htmlOutputFiles: string[] = []
 
-      for (const file of uniqFiles) {
-        if (isHtmlExtension(file)) {
-          htmlInputFiles.push(file)
-          htmlOutputFiles.push(configData.outputFiles(file))
-        } else {
-          jsCssInputFiles.push(file)
-        }
+    for (const file of uniqFiles) {
+      if (isHtmlExtension(file)) {
+        htmlInputFiles.push(file)
+        htmlOutputFiles.push(configData.outputFiles(file))
+      } else {
+        jsCssInputFiles.push(file)
       }
+    }
 
-      if (watchMode) {
-        const variables: Variable[] = []
-        let count = 0
-        chokidar.watch(configData.inputFiles, { ignored: configData.excludeFiles }).on('all', (type: string, file: string) => {
-          console.log(`Detecting ${type}: ${file}`)
-          if (type === 'add' || type === 'change') {
-            if (isHtmlExtension(file)) {
-              const index = htmlInputFiles.findIndex(f => f === file)
+    if (watchMode) {
+      const variables: Variable[] = []
+      let count = 0
+      chokidar.watch(configData.inputFiles, { ignored: configData.excludeFiles }).on('all', (type: string, file: string) => {
+        console.log(`Detecting ${type}: ${file}`)
+        if (type === 'add' || type === 'change') {
+          if (isHtmlExtension(file)) {
+            const index = htmlInputFiles.findIndex(f => f === file)
+            if (index === -1) {
+              htmlInputFiles.push(file)
+              htmlOutputFiles.push(configData.outputFiles(file))
+            } else {
+              htmlInputFiles[index] = file
+              htmlOutputFiles[index] = configData.outputFiles(file)
+            }
+            count++
+            if (count > uniqFiles.length) {
+              revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
+            } else if (count === uniqFiles.length) {
+              revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
+              writeVariables(configData, variables)
+            }
+          } else {
+            revisionCssOrJs(file, configData).then(variable => {
+              const index = variables.findIndex(v => v.file === file)
               if (index === -1) {
-                htmlInputFiles.push(file)
-                htmlOutputFiles.push(configData.outputFiles(file))
+                variables.push(variable)
               } else {
-                htmlInputFiles[index] = file
-                htmlOutputFiles[index] = configData.outputFiles(file)
+                const oldVariable = variables[index]
+                if (oldVariable.value && oldVariable.value !== variable.value) {
+                  const oldFile = path.resolve(path.dirname(oldVariable.file), oldVariable.value)
+                  console.log(`Removing ${oldFile}`)
+                  fs.unlink(oldFile, error => {
+                    if (error) {
+                      console.log(error)
+                    }
+                  })
+                }
+                variables[index] = variable
               }
               count++
-              if (count > uniqFiles.length) {
-                revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
-              } else if (count === uniqFiles.length) {
+
+              if (count >= uniqFiles.length) {
                 revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
                 writeVariables(configData, variables)
               }
-            } else {
-              revisionCssOrJs(file, configData).then(variable => {
-                const index = variables.findIndex(v => v.file === file)
-                if (index === -1) {
-                  variables.push(variable)
-                } else {
-                  const oldVariable = variables[index]
-                  if (oldVariable.value && oldVariable.value !== variable.value) {
-                    const oldFile = path.resolve(path.dirname(oldVariable.file), oldVariable.value)
-                    console.log(`Removing ${oldFile}`)
-                    fs.unlink(oldFile, error => {
-                      if (error) {
-                        console.log(error)
-                      }
-                    })
-                  }
-                  variables[index] = variable
-                }
-                count++
-
-                if (count >= uniqFiles.length) {
-                  revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
-                  writeVariables(configData, variables)
-                }
+            })
+          }
+        } else if (type === 'unlink') {
+          if (isHtmlExtension(file)) {
+            const index = htmlInputFiles.findIndex(f => f === file)
+            if (index !== -1) {
+              htmlInputFiles.splice(index, 1)
+              htmlOutputFiles.splice(index, 1)
+              revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
+            }
+          } else {
+            const index = variables.findIndex(v => v.file === file)
+            if (index !== -1) {
+              variables.splice(index, 1)
+              revisionCssOrJs(file, configData).then(() => {
+                revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
+                writeVariables(configData, variables)
               })
             }
-          } else if (type === 'unlink') {
-            if (isHtmlExtension(file)) {
-              const index = htmlInputFiles.findIndex(f => f === file)
-              if (index !== -1) {
-                htmlInputFiles.splice(index, 1)
-                htmlOutputFiles.splice(index, 1)
-                revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
-              }
-            } else {
-              const index = variables.findIndex(v => v.file === file)
-              if (index !== -1) {
-                variables.splice(index, 1)
-                revisionCssOrJs(file, configData).then(variable => {
-                  revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
-                  writeVariables(configData, variables)
-                })
-              }
-            }
           }
-        })
-      } else if (uniqFiles.length > 0) {
-        Promise.all(jsCssInputFiles.map(file => revisionCssOrJs(file, configData))).then(variables => {
-          revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
-          writeVariables(configData, variables)
-        })
-      }
-    })
+        }
+      })
+    } else if (uniqFiles.length > 0) {
+      const variables = await Promise.all(jsCssInputFiles.map(file => revisionCssOrJs(file, configData)))
+      revisionHtml(htmlInputFiles, htmlOutputFiles, variables, configData)
+      writeVariables(configData, variables)
+    }
   }
 }
 
@@ -315,7 +312,6 @@ function isHtmlExtension(file: string) {
   return htmlExtensions.indexOf(path.extname(file).toLowerCase()) !== -1
 }
 
-// tslint:disable-next-line:cognitive-complexity
 function writeVariables(configData: ConfigData, variables: Variable[]) {
   variables.sort((v1, v2) => v1.name.localeCompare(v2.name))
 
@@ -387,7 +383,7 @@ executeCommandLine().then(() => {
   process.exit(1)
 })
 
-type ConfigData = {
+interface ConfigData {
   inputFiles: string[];
   excludeFiles?: string[];
   revisedFiles?: string[];
@@ -403,5 +399,5 @@ type ConfigData = {
   scss?: string;
   base?: string;
   fileSize?: string;
-  context?: any;
+  context?: unknown;
 }
