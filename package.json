@@ -31,15 +31,15 @@
   },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
-    "@commitlint/cli": "8.3.4",
+    "@commitlint/cli": "8.3.5",
     "@commitlint/config-conventional": "8.3.4",
     "@types/ejs": "3.0.0",
     "@types/glob": "7.1.1",
-    "@types/jasmine": "3.5.0",
+    "@types/jasmine": "3.5.1",
     "@types/minimatch": "3.0.3",
     "@types/minimist": "1.2.0",
-    "@typescript-eslint/eslint-plugin": "2.15.0",
-    "@typescript-eslint/parser": "2.15.0",
+    "@typescript-eslint/eslint-plugin": "2.16.0",
+    "@typescript-eslint/parser": "2.16.0",
     "clean-release": "2.7.0",
     "clean-scripts": "1.12.1",
     "eslint": "6.8.0",
@@ -50,7 +50,7 @@
     "no-unused-export": "1.10.0",
     "rimraf": "3.0.0",
     "type-coverage": "2.4.0",
-    "typescript": "3.7.4"
+    "typescript": "3.7.5"
   },
   "dependencies": {
     "camelcase": "5.3.1",
