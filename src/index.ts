@@ -11,6 +11,8 @@ import * as gzipSize from 'gzip-size'
 import * as chokidar from 'chokidar'
 import * as packageJson from '../package.json'
 
+import { CustomNewFileName, ConfigData, CustomOldFileName } from './core'
+
 function md5(str: string): string {
   return createHash('md5').update(str).digest('hex')
 }
@@ -22,8 +24,6 @@ function calculateSha(str: string, shaType: 256 | 384 | 512): string {
 function showToolVersion() {
   console.log(`Version: ${packageJson.version}`)
 }
-
-const defaultConfigName = 'rev-static.config.js'
 
 const htmlExtensions = ['.html', '.htm', '.ejs']
 
@@ -66,10 +66,6 @@ function writeFileAsync(filename: string, data: string) {
 function getVariableName(filePath: string) {
   return camelcase(path.normalize(filePath).replace(/\\|\//g, '-'))
 }
-
-type CustomNewFileName = (filePath: string, fileString: string, md5String: string, baseName: string, extensionName: string) => string
-
-type CustomOldFileName = (filePath: string, baseName: string, extensionName: string) => string
 
 function getNewFileName(fileString: string, filePath: string, customNewFileName?: CustomNewFileName) {
   const md5String = md5(fileString)
@@ -192,6 +188,18 @@ function isImage(key: string) {
   return key !== 'sri' && key !== 'inline' && !key.endsWith('Js') && !key.endsWith('Html') && !key.endsWith('Css')
 }
 
+function statAsync(file: string) {
+  return new Promise<fs.Stats | undefined>((resolve) => {
+    fs.stat(file, (error, stats) => {
+      if (error) {
+        resolve(undefined)
+      } else {
+        resolve(stats)
+      }
+    })
+  })
+}
+
 async function executeCommandLine() {
   const argv = minimist(process.argv.slice(2), { '--': true })
 
@@ -201,14 +209,25 @@ async function executeCommandLine() {
     return
   }
 
-  let config: string | undefined = argv.config
-  if (!config) {
-    config = defaultConfigName
+  let configFilePath: string
+  if (argv.config) {
+    configFilePath = path.resolve(process.cwd(), argv.config)
+  } else {
+    configFilePath = path.resolve(process.cwd(), 'rev-static.config.ts')
+    const stats = await statAsync(configFilePath)
+    if (!stats || !stats.isFile()) {
+      configFilePath = path.resolve(process.cwd(), 'rev-static.config.js')
+    }
   }
-  const configPath = path.resolve(process.cwd(), config)
+  if (configFilePath.endsWith('.ts')) {
+    require('ts-node/register/transpile-only')
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const configFileData: ConfigData | ConfigData[] = require(configPath)
+  let configFileData: (ConfigData | ConfigData[]) & { default?: ConfigData | ConfigData[] } = require(configFilePath)
+  if (configFileData.default) {
+    configFileData = configFileData.default;
+  }
   const configDatas = Array.isArray(configFileData) ? configFileData : [configFileData]
 
   const watchMode: boolean = argv.w || argv.watch
@@ -382,22 +401,3 @@ executeCommandLine().then(() => {
   }
   process.exit(1)
 })
-
-interface ConfigData {
-  inputFiles: string[];
-  excludeFiles?: string[];
-  revisedFiles?: string[];
-  inlinedFiles?: string[];
-  outputFiles: ((file: string) => string);
-  json?: string;
-  ejsOptions?: ejs.Options;
-  sha?: 256 | 384 | 512;
-  customNewFileName?: CustomNewFileName;
-  customOldFileName?: CustomOldFileName;
-  es6?: string;
-  less?: string;
-  scss?: string;
-  base?: string;
-  fileSize?: string;
-  context?: unknown;
-}

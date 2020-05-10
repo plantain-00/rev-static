@@ -53,6 +53,7 @@ rev-static --config rev-static.config.js // config the config file path
 rev-static -v
 rev-static --version
 rev-static --watch
+rev-static --config rev-static.config.ts
 ```
 
 ## config file

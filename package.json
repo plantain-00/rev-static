@@ -2,7 +2,8 @@
   "name": "rev-static",
   "version": "3.4.5",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
-  "main": "dist/index.js",
+  "main": "dist/core.js",
+  "types": "dist/core.d.ts",
   "scripts": {
     "build": "clean-scripts build",
     "lint": "clean-scripts lint",
@@ -27,7 +28,7 @@
     "url": "https://github.com/plantain-00/rev-static/issues"
   },
   "typeCoverage": {
-    "atLeast": 98
+    "atLeast": 98.81
   },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
@@ -49,6 +50,7 @@
     "markdownlint-cli": "0.23.0",
     "no-unused-export": "1.10.3",
     "rimraf": "3.0.2",
+    "ts-node": "8.10.1",
     "type-coverage": "2.5.0",
     "typescript": "3.8.3"
   },

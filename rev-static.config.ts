@@ -1,4 +1,6 @@
-module.exports = [
+import { ConfigData } from './dist/core'
+
+export default [
   {
     inputFiles: [
       'demo/book.js',
@@ -36,4 +38,4 @@ module.exports = [
       foo: 'foo test'
     }
   }
-]
+] as ConfigData[]
