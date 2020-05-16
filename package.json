@@ -3,7 +3,7 @@
   "version": "3.5.0",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/core.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/core.d.ts",
   "scripts": {
     "build": "clean-scripts build",
     "lint": "clean-scripts lint",
@@ -36,7 +36,6 @@
     "@commitlint/config-conventional": "8.3.4",
     "@types/ejs": "3.0.4",
     "@types/glob": "7.1.1",
-    "@types/jasmine": "3.5.10",
     "@types/minimatch": "3.0.3",
     "@types/minimist": "1.2.0",
     "@typescript-eslint/eslint-plugin": "2.33.0",
@@ -46,7 +45,6 @@
     "eslint": "7.0.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-plantain": "1.0.0",
-    "jasmine": "3.5.0",
     "markdownlint-cli": "0.23.0",
     "no-unused-export": "1.10.3",
     "rimraf": "3.0.2",
@@ -63,7 +61,7 @@
     "minimatch": "3",
     "minimist": "1",
     "pretty-bytes": "5",
-    "tslib": "2"
+    "tslib": "1 || 2"
   },
   "bin": {
     "rev-static": "./bin/rev-static"
