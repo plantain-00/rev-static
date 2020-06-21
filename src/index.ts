@@ -25,6 +25,20 @@ function showToolVersion() {
   console.log(`Version: ${packageJson.version}`)
 }
 
+function showHelp() {
+  console.log(`Version ${packageJson.version}
+Syntax:   rev-static [options]
+Examples: rev-static --config rev-static.config.js
+          rev-static --config rev-static.config.ts
+          rev-static --config rev-static.config.ts --watch
+Options:
+ -h, --help                                         Print this message.
+ -v, --version                                      Print the version
+ -w, --watch                                        Watch mode
+ --config                                           Config file
+`)
+}
+
 const htmlExtensions = ['.html', '.htm', '.ejs']
 
 function globAsync(pattern: string, ignore?: string | string[]) {
@@ -201,11 +215,24 @@ function statAsync(file: string) {
 }
 
 async function executeCommandLine() {
-  const argv = minimist(process.argv.slice(2), { '--': true })
+  const argv = minimist(process.argv.slice(2), { '--': true }) as unknown as {
+    v?: unknown
+    version?: unknown
+    w?: unknown
+    watch?: unknown
+    h?: unknown
+    help?: unknown
+    config?: string
+  }
 
   const showVersion = argv.v || argv.version
   if (showVersion) {
     showToolVersion()
+    return
+  }
+
+  if (argv.h || argv.help) {
+    showHelp()
     return
   }
 
@@ -230,7 +257,7 @@ async function executeCommandLine() {
   }
   const configDatas = Array.isArray(configFileData) ? configFileData : [configFileData]
 
-  const watchMode: boolean = argv.w || argv.watch
+  const watchMode = argv.w || argv.watch
 
   for (const configData of configDatas) {
     if (!configData.inputFiles || configData.inputFiles.length === 0) {

@@ -56,6 +56,15 @@ rev-static --watch
 rev-static --config rev-static.config.ts
 ```
 
+## options
+
+key | description
+--- | ---
+-w,--watch | watch mode
+--config | config file
+-h,--help | Print this message.
+-v,--version | Print the version
+
 ## config file
 
 key | type | use case | description
