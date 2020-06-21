@@ -1,6 +1,6 @@
 {
   "name": "rev-static",
-  "version": "3.5.1",
+  "version": "3.6.0",
   "description": "Static asset revisioning by appending content hash to filenames, then changing the names in html files.",
   "main": "dist/core.js",
   "types": "./dist/core.d.ts",
