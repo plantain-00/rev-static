@@ -1,7 +1,6 @@
 import { checkGitStatus } from 'clean-scripts'
 
 const tsFiles = `"src/**/*.ts"`
-const jsFiles = `"*.config.js"`
 
 const tscSrcCommand = `tsc -p src`
 const demoCommand = 'node dist/index.js'
@@ -14,9 +13,8 @@ module.exports = {
     demoCommand
   ],
   lint: {
-    ts: `eslint --ext .js,.ts ${tsFiles} ${jsFiles}`,
+    ts: `eslint --ext .js,.ts ${tsFiles}`,
     export: `no-unused-export ${tsFiles}`,
-    commit: `commitlint --from=HEAD~1`,
     markdown: `markdownlint README.md`,
     typeCoverage: 'type-coverage -p src --strict'
   },
@@ -24,7 +22,7 @@ module.exports = {
     'clean-release --config clean-run.config.ts',
     () => checkGitStatus()
   ],
-  fix: `eslint --ext .js,.ts ${tsFiles} ${jsFiles} --fix`,
+  fix: `eslint --ext .js,.ts ${tsFiles} --fix`,
   watch: {
     src: `${tscSrcCommand} --watch`,
     demo: `${demoCommand} --watch`

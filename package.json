@@ -32,8 +32,6 @@
   },
   "homepage": "https://github.com/plantain-00/rev-static#readme",
   "devDependencies": {
-    "@commitlint/cli": "9.0.1",
-    "@commitlint/config-conventional": "9.0.1",
     "@types/ejs": "3.0.4",
     "@types/glob": "7.1.2",
     "@types/minimatch": "3.0.3",
