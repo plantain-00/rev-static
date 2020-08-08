@@ -1,6 +1,8 @@
 import { ConfigData } from 'clean-release'
 
-export default {
+import { Configuration } from 'clean-release'
+
+const config: Configuration = {
   include: [
     'bin/*',
     'dist/*',
@@ -25,3 +27,5 @@ export default {
     ({ version }) => `git push origin v${version}`
   ]
 } as ConfigData
+
+export default config

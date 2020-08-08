@@ -9,7 +9,8 @@
     "lint": "clean-scripts lint",
     "test": "clean-scripts test",
     "fix": "clean-scripts fix",
-    "watch": "clean-scripts watch"
+    "watch": "clean-scripts watch",
+    "release": "clean-release"
   },
   "repository": {
     "type": "git",
@@ -38,7 +39,7 @@
     "@types/minimist": "1.2.0",
     "@typescript-eslint/eslint-plugin": "3.8.0",
     "@typescript-eslint/parser": "3.8.0",
-    "clean-release": "2.13.0",
+    "clean-release": "2.14.0",
     "clean-scripts": "1.17.0",
     "eslint": "7.6.0",
     "eslint-config-prettier": "6.11.0",
