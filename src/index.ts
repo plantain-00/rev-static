@@ -181,12 +181,13 @@ function revisionHtml(htmlInputFiles: string[], htmlOutputFiles: string[], varia
   const ejsOptions = configData.ejsOptions ? configData.ejsOptions : {}
   Promise.all(htmlInputFiles.map(file => renderEjsAsync(file, context, ejsOptions))).then(fileStrings => {
     for (let i = 0; i < fileStrings.length; i++) {
-      const fileString = fileStrings[i]
-      writeFileAsync(htmlOutputFiles[i], fileString).then(() => {
+      const fileString = fileStrings[i]!
+      const htmlOutputFile = htmlOutputFiles[i]!
+      writeFileAsync(htmlOutputFile, fileString).then(() => {
         console.log(`Success: to "${htmlOutputFiles[i]}" from "${htmlInputFiles[i]}".`)
       })
 
-      const variableName = getVariableName(htmlOutputFiles[i])
+      const variableName = getVariableName(htmlOutputFile)
       fileSizes[variableName] = prettyBytes(fileString.length) + ' ' + prettyBytes(gzipSize.sync(fileString))
     }
 
@@ -264,7 +265,7 @@ async function executeCommandLine() {
       throw new Error('Error: no input files.')
     }
 
-    const uniqFiles = await globAsync(configData.inputFiles.length === 1 ? configData.inputFiles[0] : `{${configData.inputFiles.join(',')}}`, configData.excludeFiles)
+    const uniqFiles = await globAsync(configData.inputFiles.length === 1 ? configData.inputFiles[0]! : `{${configData.inputFiles.join(',')}}`, configData.excludeFiles)
     const htmlInputFiles: string[] = []
     const jsCssInputFiles: string[] = []
     const htmlOutputFiles: string[] = []
@@ -306,7 +307,7 @@ async function executeCommandLine() {
               if (index === -1) {
                 variables.push(variable)
               } else {
-                const oldVariable = variables[index]
+                const oldVariable = variables[index]!
                 if (oldVariable.value && oldVariable.value !== variable.value) {
                   const oldFile = path.resolve(path.dirname(oldVariable.file), oldVariable.value)
                   console.log(`Removing ${oldFile}`)
@@ -420,7 +421,7 @@ function writeVariables(configData: ConfigData, variables: Variable[]) {
 
 executeCommandLine().then(() => {
   console.log('rev-static success.')
-}, error => {
+}, (error: unknown) => {
   if (error instanceof Error) {
     console.log(error.message)
   } else {
